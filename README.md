@@ -1,4 +1,4 @@
-# Blueprint Library Test Project
+# EBLT - Extended Blueprint Library Test Plugin for Unreal Engine 
 
 [![MIT License](https://img.shields.io/github/license/bUsernameIsUnavailable/BLT?style=for-the-badge)](https://github.com/bUsernameIsUnavailable/BLT/blob/master/LICENSE.md)
 
