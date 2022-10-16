@@ -7,6 +7,15 @@
 #include "Navigation/PathFollowingComponent.h"
 #include "EBLTManager.generated.h"
 
+
+
+
+class EBLTTestingStrategy
+{
+public:
+	
+};
+
 UCLASS()
 class EBLT_API AEBLTManager : public AActor
 {

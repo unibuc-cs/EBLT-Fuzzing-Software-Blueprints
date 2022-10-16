@@ -4,6 +4,7 @@
 #include "EBLTManager.h"
 #include "EngineUtils.h"
 #include "Misc/OutputDeviceNull.h"
+#include "EBltBPLibrary.h"
 
 #pragma optimize("", off)
 
@@ -33,8 +34,7 @@ void AEBLTManager::Tick(float DeltaTime)
 	if (runTest)
 	{
 		runTest = false;
-
-
+		
 		AActor* targetDestActor = nullptr;
 
 		//in cpp
@@ -61,7 +61,7 @@ void AEBLTManager::Tick(float DeltaTime)
 		//const FString command = FString::Printf(TEXT("Test_PathfindingPathStr %s"), *targetDestActor->GetName());
 		//this->CallFunctionByNameWithArguments(*command, ar, NULL, true);
 
-		RunPathfindingTest(targetDestActor, targetTestActor);
+		//RunPathfindingTest(targetDestActor, targetTestActor);
 	}
 }
 

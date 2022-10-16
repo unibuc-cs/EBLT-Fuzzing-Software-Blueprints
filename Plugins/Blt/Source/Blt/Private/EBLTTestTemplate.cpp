@@ -3,6 +3,8 @@
 
 #include "EBLTTestTemplate.h"
 #include "EBltBPLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "EBLTManager.h"
 
 // Sets default values
 AEBLTTestTemplate::AEBLTTestTemplate()

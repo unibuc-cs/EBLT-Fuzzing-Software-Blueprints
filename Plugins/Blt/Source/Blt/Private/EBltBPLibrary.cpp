@@ -9,9 +9,50 @@
 #include "PythonBridge.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
+#include "HAL/PlatformFileManager.h"
+#include "Misc/FileHelper.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
+#include "TestAnnotation.h"
 
 
 #pragma optimize("", off)
+
+///////////// DEMO DELETE 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(AnnotationTest_IntSet, "EBLTOwnTests", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool AnnotationTest_IntSet::RunTest(FString const& Parameters)
+{
+	TestAnnotation_Float test1("[min=0.8, max=1.2]");
+
+
+	const auto Tolerance = KINDA_SMALL_NUMBER;
+	TestEqual("min val annotation ", test1.GetMinVal(), 0.8f);
+	TestEqual("max val annotation ", test1.GetMaxVal(), 1.2f);
+
+	TestAnnotation_Float test2("{100 # 200 # 300}");
+
+	
+	TestEqual("annotation type", test1.GetType(), VariableAnnotationType::VARANNOTATION_AS_SET);
+	TestEqual("max val annotation ", test1.GetValues()[2], 300, Tolerance);
+
+#if 0
+	const auto BoolToTest = false;
+	TestTrue("bool to test", BoolToTest);
+
+	const auto FloatToTest = 0.F;
+	const auto Expected = 10.F;
+	
+	TestEqual("float to test", FloatToTest, Expected, Tolerance);
+#endif
+
+	return true;
+}
+
+////////////////////////////////////////
+
+
 
 DEFINE_LOG_CATEGORY(LogBlt);
 

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "EBltBPLibrary.h"
 #include "EBLTTestTemplate.generated.h"
 
 UCLASS()
