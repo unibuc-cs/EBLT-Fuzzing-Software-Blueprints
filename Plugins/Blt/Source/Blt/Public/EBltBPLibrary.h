@@ -42,7 +42,7 @@ public:
 	);
 	
 	UFUNCTION(BlueprintCallable, Category = "EBLT/Utilities", meta = (WorldContext = "WorldContextObject"))
-	static TArray<AActor*> GetAllActorsOfClass(const UObject* const WorldContextObject, const FString& ActorClassName);
+	static void GetAllActorsOfClass(const UObject* const WorldContextObject, const FString& ActorClassName, TArray<AActor*>& outActorsByClassName);
 
 
 	// Gets the character to test in the world

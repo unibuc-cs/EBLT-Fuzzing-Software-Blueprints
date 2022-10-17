@@ -19,23 +19,77 @@
 
 #pragma optimize("", off)
 
-///////////// DEMO DELETE 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(AnnotationTest_IntSet, "EBLTOwnTests", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+///////////// DEMO DELETE
 
-bool AnnotationTest_IntSet::RunTest(FString const& Parameters)
+// Gets the UWorld for tests
+static UWorld* GetWorldForTests()
 {
-	TestAnnotation_Float test1("[min=0.8, max=1.2]");
+	if (GEngine)
+	{
+		if (const FWorldContext* WorldContext = GEngine->GetWorldContextFromPIEInstance(0))
+		{
+			return WorldContext->World();
+		}
+	}
+	return nullptr;
+}
+
+// Needed to exit from the current opened map.
+static void ExitCurrentOpenedMap()
+{
+	if (UWorld* World = GetWorldForTests())
+	{
+		if (APlayerController* TargetPC = UGameplayStatics::GetPlayerController(World, 0))
+		{
+			TargetPC->ConsoleCommand(TEXT("Exit"), true);
+		}
+	}
+}
+
+// Simulate a key pressed by name and input event (mouse / keyboard /ctrl)
+static bool SimulatePressKey(const FName& KeyName, EInputEvent InputEvent)
+{
+	if (GEngine)
+	{
+		if (GEngine->GameViewport)
+		{
+			if (FViewport* Viewport = GEngine->GameViewport->Viewport)
+			{
+				if (FViewportClient* ViewportClient = Viewport->GetClient())
+				{
+					return ViewportClient->InputKey(FInputKeyEventArgs(Viewport, 0, KeyName, InputEvent));
+				}
+			}
+		}
+	}
+	return false;
+}
 
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(Annotation_BaseTests, "EBLTOwnTests", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(Annotation_JsonTests, "EBLTOwnTests", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool Annotation_BaseTests::RunTest(FString const& Parameters)
+{
 	const auto Tolerance = KINDA_SMALL_NUMBER;
+
+	const TestAnnotation_Float test1("[min=0.8, max=1.2]");
 	TestEqual("min val annotation ", test1.GetMinVal(), 0.8f);
 	TestEqual("max val annotation ", test1.GetMaxVal(), 1.2f);
 
-	TestAnnotation_Float test2("{100 # 200 # 300}");
 
-	
-	TestEqual("annotation type", test1.GetType(), VariableAnnotationType::VARANNOTATION_AS_SET);
-	TestEqual("max val annotation ", test1.GetValues()[2], 300, Tolerance);
+	const TestAnnotation_Float test2("{100 # 200 # 300}");
+	TestEqual("annotation type", test2.GetType(), VariableAnnotationType::VARANNOTATION_AS_SET);
+	TestEqual("value on pos 2 ", test2.GetValues()[2], 300, Tolerance);
+
+
+	const TestAnnotation_Vector test3("{(-2330.000000,-1970.000000,543.147949) # (-1709.232910,-1860.210449,411.586578)}");
+	TestEqual("annotation type", test3.GetType(), VariableAnnotationType::VARANNOTATION_AS_SET);
+	TestEqual("second value z ", (float)test3.GetValues()[1].Z, 411.586578f, Tolerance);
+
+	const TestAnnotation_Vector test4("[min=(-2330.000000,-1970.000000,543.147949),max=(-1709.232910,-1860.210449,411.586578)]");
+	TestEqual("annotation type", test4.GetType(), VariableAnnotationType::VARANNOTATIONS_AS_RANGE);
+	TestEqual("max val annotation ", (float)test4.GetMaxVal().Y, -1860.210449f, Tolerance);
 
 #if 0
 	const auto BoolToTest = false;
@@ -50,6 +104,20 @@ bool AnnotationTest_IntSet::RunTest(FString const& Parameters)
 	return true;
 }
 
+bool Annotation_JsonTests::RunTest(FString const& Parameters)
+{
+	TSharedPtr<FJsonObject> JsonParsed;
+	if (!UEBltBPLibrary::ParseJson("Data/AnnotationsExample.json", JsonParsed))
+	{
+		TestFalse("Can't find the json specified", false);
+		return true;
+	}
+
+	/// TODO
+
+	return true;
+}
+
 ////////////////////////////////////////
 
 
@@ -60,38 +128,7 @@ DEFINE_LOG_CATEGORY(LogBlt);
 AEBLTManager*  UEBltBPLibrary::m_ebltManager = nullptr;
 
 
-bool UEBltBPLibrary::ParseJson(const FString& FilePath, TSharedPtr<FJsonObject>& OutObject)
-{
-	FString AbsoluteFilePath;
-	if (!GetAbsolutePath(FilePath, AbsoluteFilePath))
-		return false;
-	
-	FString JsonRaw;
-	FFileHelper::LoadFileToString(JsonRaw, *AbsoluteFilePath);
-	if (!FJsonSerializer::Deserialize<TCHAR>(TJsonReaderFactory<TCHAR>::Create(JsonRaw), OutObject))
-	{
-		UE_LOG(LogBlt, Error, TEXT("Could not deserialize %s [check if file is JSON]"), *AbsoluteFilePath);
-		return false;
-	}
 
-	return true;
-}
-
-bool UEBltBPLibrary::GetAbsolutePath(const FString& FilePath, FString& AbsoluteFilePath)
-{
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	
-	AbsoluteFilePath = FilePath;
-	if (PlatformFile.FileExists(*AbsoluteFilePath))
-		return true;
-
-	AbsoluteFilePath = FPaths::ProjectContentDir() + FilePath;
-	if (PlatformFile.FileExists(*AbsoluteFilePath))
-		return true;
-
-	UE_LOG(LogBlt, Error, TEXT("File %s not found [relative path starts from /Content/]"), *AbsoluteFilePath);
-	return false;
-}
 
 UClass* UEBltBPLibrary::FindClass(const FString& ClassName, const bool& bExactClass, UObject* const Package)
 {
@@ -109,18 +146,22 @@ UClass* UEBltBPLibrary::FindClass(const FString& ClassName, const bool& bExactCl
 	return nullptr;
 }
 
-TArray<AActor*> UEBltBPLibrary::GetAllActorsOfClass(
+void UEBltBPLibrary::GetAllActorsOfClass(
 	const UObject* const WorldContextObject,
-	const FString& ActorClassName
+	const FString& ActorClassName,
+	TArray<AActor*>& outActorsByClassName
 )
 {
+	outActorsByClassName.Empty();
+
+
 	const TSubclassOf<AActor> ActorClass = FindClass(ActorClassName);
 	if (!ActorClass)
-		return TArray<AActor*>();
+	{
+		return;
+	}
 
-	TArray<AActor*> OutActors;
-	UGameplayStatics::GetAllActorsOfClass(WorldContextObject->GetWorld(), ActorClass, OutActors);
-	return OutActors;
+	UGameplayStatics::GetAllActorsOfClass(WorldContextObject->GetWorld(), ActorClass, outActorsByClassName);
 }
 
 void UEBltBPLibrary::ApplyFuzzing(
@@ -131,6 +172,7 @@ void UEBltBPLibrary::ApplyFuzzing(
 	const bool bUseArray
 )
 {
+#if 0
 	TSharedPtr<FJsonObject> JsonParsed;
 	if (!ParseJson(FilePath, JsonParsed))
 		return;
@@ -150,13 +192,17 @@ void UEBltBPLibrary::ApplyFuzzing(
 			continue;
 		}
 
-		const TMap<FString, TSharedPtr<FJsonValue>>& ActorClassProperties = ActorClassObject->Get()->Values;
+		TArray<AActor*> allActorsByClass;
+		GetAllActorsOfClass(WorldContextObject, ActorClassName, allActorsByClass);
+
+		const TMap<FString, Annotation>& ActorClassProperties = ActorClassObject->Get()->Values;
 		for (AActor* const& Actor :
-			bUseArray ? AffectedActors : GetAllActorsOfClass(WorldContextObject, ActorClassName))
+			bUseArray ? AffectedActors : allActorsByClass)
 		{
 			RandomiseProperties(Actor, JsonActorClassType, ActorClassProperties, Flags);
 		}
 	}
+#endif
 }
 
 void UEBltBPLibrary::K2ApplyFuzzing(

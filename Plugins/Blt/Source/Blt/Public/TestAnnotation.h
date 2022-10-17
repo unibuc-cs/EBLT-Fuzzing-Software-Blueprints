@@ -41,8 +41,11 @@ class ITestAnnotation
 
 	static constexpr int GItems_MinMax_Size = length(GItems_Min_Str);
 
+	
 
 public:
+	TestVariableType m_testVariableType = TestVariableType::TEST_VAR_DONOTTEST;
+
 	virtual ~ITestAnnotation() {}
 	virtual T generateRandomValue() = 0;
 
@@ -58,19 +61,26 @@ public:
 			genericAnnotation_copy.erase(genericAnnotation_copy.begin());
 			genericAnnotation_copy.erase(genericAnnotation_copy.end()-1);
 
-			std::size_t prevFound = 0;
-			std::size_t found = genericAnnotation_copy.find(GItems_Separator_Chr, prevFound);
-			while (found != std::string::npos)
+			std::string tempStr;
+			for (int i = 0; i < genericAnnotation_copy.size(); i++)
 			{
-				// Process one item
-				std::string nextItemStr = genericAnnotation_copy.substr(0, found);
-				auto res = readSingleValue(nextItemStr);
-				genericAnnotation_copy.erase(genericAnnotation_copy.begin(), genericAnnotation_copy.begin() + found);
+				if (genericAnnotation_copy[i] != GItems_Separator_Chr)
+				{
+					tempStr += genericAnnotation_copy[i];
+				}
+				else
+				{
+					const T res = readSingleValue(tempStr);
+					m_setOfValues.push_back(res);
+					tempStr.clear();
+				}
+			}
 
+			if (tempStr.size() > 0)
+			{
+				const T res = readSingleValue(tempStr);
 				m_setOfValues.push_back(res);
-
-				// then go to next item,
-				found = genericAnnotation_copy.find(GItems_Separator_Chr);
+				tempStr.clear();
 			}
 
 			m_eAnnotationType = VariableAnnotationType::VARANNOTATION_AS_SET;
@@ -82,20 +92,29 @@ public:
 
 			ensureMsgf(minValuePos != std::string::npos && maxValuePos != std::string::npos, TEXT("Missing min and or max from def"));
 
-			m_minVal = readSingleValue(std::string(genericAnnotation_copy.begin() + minValuePos + GItems_MinMax_Size,
-				genericAnnotation_copy.begin() + maxValuePos));
+			std::string minVal = std::string(genericAnnotation_copy.begin() + minValuePos + GItems_MinMax_Size,
+				genericAnnotation_copy.begin() + maxValuePos);
 
-			m_maxVal = readSingleValue(std::string(genericAnnotation_copy.begin() + maxValuePos + GItems_MinMax_Size,
-				genericAnnotation_copy.end()));
+			m_minVal = readSingleValue(minVal);
+
+			std::string maxVal = std::string(genericAnnotation_copy.begin() + maxValuePos + GItems_MinMax_Size,
+				genericAnnotation_copy.end());
+			m_maxVal = readSingleValue(maxVal);
 
 			m_eAnnotationType = VariableAnnotationType::VARANNOTATIONS_AS_RANGE;
 		}
 	}
 
-	virtual T readSingleValue(const std::string& singleValueStr) = 0;
+	virtual T readSingleValue(std::string& singleValueStr)
+	{
+		EBLTCommonUtils::leftTrim(singleValueStr);
+		EBLTCommonUtils::rightTrim(singleValueStr);
+
+		return T();
+	}
 
 
-	VariableAnnotationType GetType() { return m_eAnnotationType; }
+	VariableAnnotationType GetType() const { return m_eAnnotationType; }
 	T GetMinVal() const { return m_minVal; }
 	T GetMaxVal() const { return m_maxVal; }
 	const std::vector<T>& GetValues() const{ return m_setOfValues; }
@@ -117,7 +136,41 @@ public:
 	virtual float generateRandomValue() override;
 protected:
 	// Reads from a string a concrete value
-	virtual float readSingleValue(const std::string& singleValueStr) override;
+	virtual float readSingleValue(std::string& singleValueStr) override;
+};
+
+class TestAnnotation_Int : public ITestAnnotation<int>
+{
+public:
+	TestAnnotation_Int(const std::string& genericAnnotation);
+
+	virtual int generateRandomValue() override;
+protected:
+	// Reads from a string a concrete value
+	virtual int readSingleValue(std::string& singleValueStr) override;
+};
+
+class TestAnnotation_Vector : public ITestAnnotation<FVector3f>
+{
+public:
+	TestAnnotation_Vector(const std::string& genericAnnotation);
+
+	virtual FVector3f generateRandomValue() override;
+protected:
+	// Reads from a string a concrete value
+	virtual FVector3f readSingleValue(std::string& singleValueStr) override;
+};
+
+
+// Holds specificiations about a sequence of tests and their variable ranges, inputs, outputs, etc
+class TestsAnnotationsParser
+{
+public:
+	bool ParseTestsAnnotationsFromJSon(const FString& FilePath);
+
+private:
+
+	bool GetAbsolutePath(const FString& FilePath, FString& AbsoluteFilePath);
 };
 
 #pragma optimize("", on)
