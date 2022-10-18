@@ -1,8 +1,16 @@
 #include "TestAnnotation.h"
+#include "HAL/PlatformFileManager.h"
+#include "Misc/FileHelper.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Logging/LogMacros.h"
 #include <algorithm>
+
+#include "EBltBPLibrary.h"
 
 #include "Containers/StringConv.h"
 #pragma optimize("", off)
+
 
 DEFINE_LOG_CATEGORY(LogBlt);
 
@@ -32,7 +40,7 @@ float TestAnnotation_Float::readSingleValue(std::string& singleValueStr)
 	ITestAnnotation::readSingleValue(singleValueStr);
 
 	float res = 0.0f;
-	sscanf(singleValueStr.c_str(), "%f", &res);
+	sscanf_s(singleValueStr.c_str(), "%f", &res);
 	return res;
 }
 
@@ -63,7 +71,7 @@ int TestAnnotation_Int::readSingleValue(std::string& singleValueStr)
 	ITestAnnotation::readSingleValue(singleValueStr);
 
 	int res = 0;
-	sscanf(singleValueStr.c_str(), "%d", &res);
+	sscanf_s(singleValueStr.c_str(), "%d", &res);
 	return res;
 }
 
@@ -94,14 +102,14 @@ FVector3f TestAnnotation_Vector::readSingleValue(std::string& singleValueStr)
 	ITestAnnotation::readSingleValue(singleValueStr);
 
 	FVector3f res;
-	sscanf(singleValueStr.c_str(), "(%f,%f,%f)", &res.X, &res.Y, &res.Z);
+	sscanf_s(singleValueStr.c_str(), "(%f,%f,%f)", &res.X, &res.Y, &res.Z);
 	return res;
 }
 
-bool TestsAnnotationsParser::ParseTestsAnnotationsFromJSon(const FString& FilePath)
+bool TestsAnnotationsParser::ParseTestsAnnotationsFromJSon(const FString& FilePath, MapFromTestNameToAnnotations& outTestsAndAnnotations)
 {
 	FString AbsoluteFilePath;
-	if (!GetAbsolutePath(FilePath, AbsoluteFilePath))
+	if (!EBLTCommonUtils::GetAbsolutePath(FilePath, AbsoluteFilePath))
 		return false;
 
 	FString JsonRaw;
@@ -117,8 +125,8 @@ bool TestsAnnotationsParser::ParseTestsAnnotationsFromJSon(const FString& FilePa
 	for (const TTuple<FString, TSharedPtr<FJsonValue>>& JsonClass : JsonClasses)
 	{
 		const FString& ActorClassName = JsonClass.Key;
-		const UClass* const& JsonActorClassType = UEBltBPLibrary::FindClass(ActorClassName);
-		if (!JsonActorClassType)
+		const UClass* const& BlueprintToTestClassType = UEBltBPLibrary::FindClass(ActorClassName);
+		if (!BlueprintToTestClassType)
 			continue;
 
 		const TSharedPtr<FJsonObject>* ActorClassObject;
@@ -128,9 +136,38 @@ bool TestsAnnotationsParser::ParseTestsAnnotationsFromJSon(const FString& FilePa
 			continue;
 		}
 
-		const TMap<FString, TSharedPtr<FJsonValue>>& ActorClassProperties = ActorClassObject->Get()->Values;
+		const TMap<FString, TSharedPtr<FJsonValue>>& BlueprintToTestPropertiesSpec = ActorClassObject->Get()->Values;
 
 		// TODO: parse from here the annotations
+#if 0
+		const bool& bIncludeBase = FuzzingFlags & static_cast<uint8>(EFuzzingFlags::IncludeBase);
+		const bool& bIncludeSuper = FuzzingFlags & static_cast<uint8>(EFuzzingFlags::IncludeSuper);
+		const bool& bIncludeNull = FuzzingFlags & static_cast<uint8>(EFuzzingFlags::IncludeNull);
+#endif
+		const bool bIncludeBase = true, bIncludeSuper = true , bIncludeNull = true;
+
+		for (TFieldIterator<FProperty> Iterator(BlueprintToTestClassType); Iterator; ++Iterator)
+		{
+			const FProperty* const Property = *Iterator;
+			const FString& PropertyName = Property->GetNameCPP();
+
+			if (!BlueprintToTestPropertiesSpec.Contains(PropertyName))
+			{
+				const UClass* const& OwnerClass = Property->GetOwnerClass();
+				if (
+					bIncludeBase && OwnerClass == JsonActorClassType ||
+					bIncludeSuper && OwnerClass == JsonActorClassType->GetSuperClass()
+					) {
+					RandomisePropertiesDefault(Actor, Property);
+				}
+				continue;
+			}
+
+			const FJsonValue* const PropertyValue = ActorClassProperties.Find(PropertyName)->Get();
+			switch (PropertyValue->Type)
+			{
+
+
 
 #if 0
 		TArray<AActor*> outActorsByClassName;
@@ -145,22 +182,6 @@ bool TestsAnnotationsParser::ParseTestsAnnotationsFromJSon(const FString& FilePa
 	}
 
 	return true;
-}
-
-bool TestsAnnotationsParser::GetAbsolutePath(const FString& FilePath, FString& AbsoluteFilePath)
-{
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-
-	AbsoluteFilePath = FilePath;
-	if (PlatformFile.FileExists(*AbsoluteFilePath))
-		return true;
-
-	AbsoluteFilePath = FPaths::ProjectContentDir() + FilePath;
-	if (PlatformFile.FileExists(*AbsoluteFilePath))
-		return true;
-
-	UE_LOG(LogBlt, Error, TEXT("File %s not found [relative path starts from /Content/]"), *AbsoluteFilePath);
-	return false;
 }
 
 #pragma optimize("", on)

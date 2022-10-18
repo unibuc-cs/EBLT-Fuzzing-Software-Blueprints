@@ -10,7 +10,6 @@
 
 class FJsonValue;
 class AEBLTManager;
-DECLARE_LOG_CATEGORY_EXTERN(LogBlt, Log, All);
 
 UENUM(BlueprintType)
 enum class EBLTTestStatus : uint8
@@ -28,11 +27,11 @@ class UEBltBPLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	static bool ParseJson(const FString& FilePath, TSharedPtr<FJsonObject>& OutObject);
+	//static bool ParseJson(const FString& FilePath, TSharedPtr<FJsonObject>& OutObject);
 
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Game Testing")
-	static bool GetAbsolutePath(const FString& FilePath, FString& AbsoluteFilePath);
+	//UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Game Testing")
+	//static bool GetAbsolutePath(const FString& FilePath, FString& AbsoluteFilePath);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Game Testing")
 	static UClass* FindClass(

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "TestAnnotation.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -28,6 +29,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	MapFromTestNameToAnnotations outTestsAndAnnotations;
 
 public:	
 	// Called every frame

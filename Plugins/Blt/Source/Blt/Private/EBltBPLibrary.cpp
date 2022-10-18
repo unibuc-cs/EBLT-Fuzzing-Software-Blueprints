@@ -106,6 +106,7 @@ bool Annotation_BaseTests::RunTest(FString const& Parameters)
 
 bool Annotation_JsonTests::RunTest(FString const& Parameters)
 {
+#if 0
 	TSharedPtr<FJsonObject> JsonParsed;
 	if (!UEBltBPLibrary::ParseJson("Data/AnnotationsExample.json", JsonParsed))
 	{
@@ -114,15 +115,11 @@ bool Annotation_JsonTests::RunTest(FString const& Parameters)
 	}
 
 	/// TODO
-
+#endif
 	return true;
 }
 
 ////////////////////////////////////////
-
-
-
-DEFINE_LOG_CATEGORY(LogBlt);
 
 
 AEBLTManager*  UEBltBPLibrary::m_ebltManager = nullptr;

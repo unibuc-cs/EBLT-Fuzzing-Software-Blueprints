@@ -25,8 +25,13 @@ enum class VariableAnnotationType : int8_t
 	VARANNOTATIONS_AS_RANGE, // As range of values
 };
 
+class IGenericTestAnnotation
+{
+	
+};
+
 template <typename T>
-class ITestAnnotation
+class ITestAnnotation : IGenericTestAnnotation
 {
 
 	template< size_t N >
@@ -162,15 +167,23 @@ protected:
 };
 
 
+// This class contains all variables annotations inside a test
+class SingleTestAnnotations
+{
+public:
+	TMap<FString, IGenericTestAnnotation*> m_VariableNameToAnnotationData;
+};
+
+using MapFromTestNameToAnnotations = TMap<FString, SingleTestAnnotations>;
+
 // Holds specificiations about a sequence of tests and their variable ranges, inputs, outputs, etc
 class TestsAnnotationsParser
 {
 public:
-	bool ParseTestsAnnotationsFromJSon(const FString& FilePath);
+	// Builds annotations and tests from a spec json file
+	static bool ParseTestsAnnotationsFromJSon(const FString& FilePath, MapFromTestNameToAnnotations& outTestsAndAnnotations);
 
 private:
-
-	bool GetAbsolutePath(const FString& FilePath, FString& AbsoluteFilePath);
 };
 
 #pragma optimize("", on)
