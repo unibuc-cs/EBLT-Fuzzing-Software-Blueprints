@@ -239,12 +239,13 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 	case TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM:
 		{
 			// TODO: here we should select which actors...maybe there are more that we can do !
-			TArray<AActor*> outAllActors;
-			UGameplayStatics::GetAllActorsOfClass(worldContext, testAnnotations.m_classToTest, outAllActors); //testAnnotations.m_classToTest, outAllActors);
+			//TArray<AActor*> outAllActors;
+			//UGameplayStatics::GetAllActorsOfClass(worldContext, testAnnotations.m_classToTest, outAllActors); //testAnnotations.m_classToTest, outAllActors);
 
 
 			// For each actor, just randomize properties according to the annotations
-			for (const AActor* actor : outAllActors)
+//			for (const AActor* actor : outAllActors)
+		const AActor* actor = testAnnotations.m_spawnedTestActorForTest;
 			{
 				for (const TPair<FString, IGenericTestAnnotation*>& varSpec : testAnnotations.m_VariableNameToAnnotationData)
 				{

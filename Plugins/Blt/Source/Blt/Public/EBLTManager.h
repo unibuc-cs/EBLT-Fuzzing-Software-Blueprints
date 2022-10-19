@@ -30,11 +30,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	MapFromTestNameToAnnotations outTestsAndAnnotations;
+	MapFromTestNameToAnnotations m_testNamesToAnnotations;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	void RunTestSuite();
+	void InitTestsSuite();
 
 	UFUNCTION(BlueprintNativeEvent)
 	void RunPathfindingTest(AActor* actor, AActor* location);
@@ -44,5 +47,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnMoveCompletedEvent(FAIRequestID RequestID, EPathFollowingResult::Type Result);
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (RelativePath))
+	FFilePath AnnotationsPath;
+
 	void OnMoveCompletedEvent_Implementation(FAIRequestID RequestID, EPathFollowingResult::Type Result);
+
 };

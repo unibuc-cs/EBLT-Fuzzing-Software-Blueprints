@@ -198,7 +198,8 @@ protected:
 class SingleTestAnnotations
 {
 public:
-	UClass* m_classToTest;
+	AActor* m_spawnedTestActorForTest = nullptr;
+	UClass* m_classToTest = nullptr;
 	TArray<AActor> m_allTestActors; // All actors of this class 
 	TMap<FString, IGenericTestAnnotation*> m_VariableNameToAnnotationData;
 };
@@ -215,6 +216,7 @@ public:
 	static bool BuildTestInstance(const UWorld* worldContext, const TestParamsSuggestionStrategy strategy, AActor* targetTestActor, const SingleTestAnnotations& testAnnotations);
 
 private:
+
 };
 
 #pragma optimize("", on)

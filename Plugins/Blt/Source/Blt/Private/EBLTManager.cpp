@@ -20,7 +20,8 @@ AEBLTManager::AEBLTManager()
 void AEBLTManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	InitTestsSuite();
 }
 
 // Called every frame
@@ -28,6 +29,12 @@ void AEBLTManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+
+	bool runTestSuite = false;
+	if (runTestSuite)
+	{
+		RunTestSuite();
+	}
 
 
 	bool runTest = false;
@@ -71,5 +78,48 @@ void AEBLTManager::OnMoveCompletedEvent_Implementation(FAIRequestID RequestID, E
 	int a = 3;
 	a++;
 }
+
+void AEBLTManager::RunTestSuite()
+{
+	// Spawn test actors according to the strategy and stuff
+	// TODO
+
+	// For each selected test set an instance with parameter and run it
+	for (TPair<FString, SingleTestAnnotations>& testData : m_testNamesToAnnotations)
+	{
+		const FString& testName = testData.Key;
+		SingleTestAnnotations& testSpecs = testData.Value;
+
+		// 
+		TestsAnnotationsHelper::BuildTestInstance(GetWorld(), TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM, 
+												testSpecs.m_spawnedTestActorForTest, testSpecs);
+
+	}
+	//
+
+
+	// Wait for tests to complete
+	// TODO
+}
+
+void AEBLTManager::InitTestsSuite()
+{
+	// Step 1: parse the annotations and make internal setups
+	TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(AnnotationsPath.FilePath, m_testNamesToAnnotations);
+
+	// Step 2: Spawn actors for all tests in the level - might not be a very good idea in practice
+	// TODO: what if too many ? maybe certain levels need to focus on particular tests ! We could also address this by multiple instances reading different annotations files
+
+	for (TPair<FString, SingleTestAnnotations>& testData : m_testNamesToAnnotations)
+	{
+		const FString& testName = testData.Key;
+		SingleTestAnnotations& testSpecs = testData.Value;
+
+		AActor* testActor = GetWorld()->SpawnActor(testSpecs.m_classToTest);
+		ensureMsgf(testActor, TEXT("couldnt spawn the testing actor"));
+		testSpecs.m_spawnedTestActorForTest = testActor;
+	}
+}
+
 
 #pragma optimize("", on)
