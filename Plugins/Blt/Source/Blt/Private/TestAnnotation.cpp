@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "EBltBPLibrary.h"
+#include "EngineUtils.h"
 
 #include "Containers/StringConv.h"
 #include "Kismet/GameplayStatics.h"
@@ -175,7 +176,7 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 	for (const TTuple<FString, TSharedPtr<FJsonValue>>& BlueprintToTestClassDef : JsonClasses)
 	{
 		const FString& ActorClassName = BlueprintToTestClassDef.Key;
-		const UClass* const BlueprintToTestClassType = UEBltBPLibrary::FindClass(ActorClassName);
+		UClass* const BlueprintToTestClassType = UEBltBPLibrary::FindClass(ActorClassName);
 		if (!BlueprintToTestClassType)
 			continue;
 
@@ -239,13 +240,13 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 		{
 			// TODO: here we should select which actors...maybe there are more that we can do !
 			TArray<AActor*> outAllActors;
-			UGameplayStatics::GetAllActorsOfClass(worldContext, testAnnotations.m_classToTest, outAllActors);
+			UGameplayStatics::GetAllActorsOfClass(worldContext, testAnnotations.m_classToTest, outAllActors); //testAnnotations.m_classToTest, outAllActors);
 
 
 			// For each actor, just randomize properties according to the annotations
 			for (const AActor* actor : outAllActors)
 			{
-				for (const TPair<FString, IGenericTestAnnotation>& varSpec : testAnnotations.m_VariableNameToAnnotationData)
+				for (const TPair<FString, IGenericTestAnnotation*>& varSpec : testAnnotations.m_VariableNameToAnnotationData)
 				{
 					IGenericTestAnnotation* varAnnotation = varSpec.Value;
 
@@ -256,6 +257,11 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 						{
 							const TestAnnotation_Vector* asVector = CastChecked<TestAnnotation_Vector>(varAnnotation);
 							const FVector3f val = asVector->generateRandomValue();
+							const FStructProperty* propRef = CastField<FStructProperty>(varAnnotation->m_parentUEPropertyRef);
+
+
+							FVector3f * targetValPtr = (FVector3f*) propRef->ContainerPtrToValuePtr<FVector3f>(actor);
+							* targetValPtr = val;
 						}
 						break;
 
@@ -263,13 +269,21 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 						{
 							const TestAnnotation_Float* asFloat = CastChecked<TestAnnotation_Float>(varAnnotation);
 							const float val = asFloat->generateRandomValue();
+							const FFloatProperty* propRef = CastField<FFloatProperty>(varAnnotation->m_parentUEPropertyRef);
+
+							float* targetValPtr = (float*)propRef->ContainerPtrToValuePtr<float>(actor);
+							propRef->SetFloatingPointPropertyValue(targetValPtr, (double)val);
 						}
 						break;
 
 						case TestVariableType::TEST_VAR_INTEGER:
 						{
-							const TestAnnotation_Int* asInt= CastChecked<TestAnnotation_Float>(varAnnotation);
+							const TestAnnotation_Int* asInt = CastChecked<TestAnnotation_Int>(varAnnotation);
 							const int val = asInt->generateRandomValue();
+							const FIntProperty* propRef = CastField<FIntProperty>(varAnnotation->m_parentUEPropertyRef);
+
+							int* targetValPtr = (int*)propRef->ContainerPtrToValuePtr<int>(actor);
+							propRef->SetFloatingPointPropertyValue(targetValPtr, val);
 						}
 						break;
 
@@ -289,6 +303,8 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 		ensureMsgf(false, TEXT("Next submission"));
 		}
 	}
+
+	return true;
 }
 
 

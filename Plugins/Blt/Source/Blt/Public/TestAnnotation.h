@@ -198,7 +198,7 @@ protected:
 class SingleTestAnnotations
 {
 public:
-	const UClass* m_classToTest;
+	UClass* m_classToTest;
 	TArray<AActor> m_allTestActors; // All actors of this class 
 	TMap<FString, IGenericTestAnnotation*> m_VariableNameToAnnotationData;
 };
