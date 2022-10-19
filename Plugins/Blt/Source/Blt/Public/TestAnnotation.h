@@ -5,8 +5,11 @@
 
 #include "Misc/AssertionMacros.h"
 #include "EBLTCommonUtils.h"
+#include "UObject/Object.h"
 
 #pragma optimize("", off)
+
+class AActor;
 
 enum class TestVariableType : int8_t
 {
@@ -25,13 +28,24 @@ enum class VariableAnnotationType : int8_t
 	VARANNOTATIONS_AS_RANGE, // As range of values
 };
 
-class IGenericTestAnnotation
+class IGenericTestAnnotation : public UObject
 {
+public:
+	const FProperty* m_parentUEPropertyRef = nullptr;
+
+	virtual bool Init(const std::string& genericAnnotation) = 0;
 	
+	virtual const bool IsValid() const { return m_isValid; }
+
+	virtual TestVariableType GetTestVariableType() const { return m_testVariableType; }
+
+protected:
+	bool m_isValid = false;
+	TestVariableType m_testVariableType = TestVariableType::TEST_VAR_DONOTTEST;
 };
 
 template <typename T>
-class ITestAnnotation : IGenericTestAnnotation
+class ITestAnnotation : public IGenericTestAnnotation
 {
 
 	template< size_t N >
@@ -46,15 +60,11 @@ class ITestAnnotation : IGenericTestAnnotation
 
 	static constexpr int GItems_MinMax_Size = length(GItems_Min_Str);
 
-	
-
 public:
-	TestVariableType m_testVariableType = TestVariableType::TEST_VAR_DONOTTEST;
-
 	virtual ~ITestAnnotation() {}
-	virtual T generateRandomValue() = 0;
+	virtual T generateRandomValue() const = 0;
 
-	virtual void readAllValues(const std::string& genericAnnotation)
+	virtual bool readAllValues(const std::string& genericAnnotation)
 	{
 		std::string genericAnnotation_copy = genericAnnotation;
 		EBLTCommonUtils::leftTrim(genericAnnotation_copy);
@@ -65,6 +75,8 @@ public:
 		{
 			genericAnnotation_copy.erase(genericAnnotation_copy.begin());
 			genericAnnotation_copy.erase(genericAnnotation_copy.end()-1);
+
+			m_isValid = genericAnnotation_copy.size() > 0;
 
 			std::string tempStr;
 			for (int i = 0; i < genericAnnotation_copy.size(); i++)
@@ -92,6 +104,9 @@ public:
 		}
 		else if (genericAnnotation_copy[0] == '[')
 		{
+			m_isValid = genericAnnotation_copy.size() > 0;
+
+
 			std::size_t minValuePos = genericAnnotation_copy.find(GItems_Min_Str);
 			std::size_t maxValuePos = genericAnnotation_copy.find(GItems_Max_Str);
 
@@ -108,6 +123,8 @@ public:
 
 			m_eAnnotationType = VariableAnnotationType::VARANNOTATIONS_AS_RANGE;
 		}
+
+		return m_isValid;
 	}
 
 	virtual T readSingleValue(std::string& singleValueStr)
@@ -136,9 +153,10 @@ protected:
 class TestAnnotation_Float : public ITestAnnotation<float>
 {
 public:
-	TestAnnotation_Float(const std::string& genericAnnotation);
+	TestAnnotation_Float() {}
+	virtual bool Init(const std::string& genericAnnotation) override;
 
-	virtual float generateRandomValue() override;
+	virtual float generateRandomValue() const override;
 protected:
 	// Reads from a string a concrete value
 	virtual float readSingleValue(std::string& singleValueStr) override;
@@ -147,9 +165,10 @@ protected:
 class TestAnnotation_Int : public ITestAnnotation<int>
 {
 public:
-	TestAnnotation_Int(const std::string& genericAnnotation);
+	TestAnnotation_Int();
+	virtual bool Init(const std::string& genericAnnotation) override;
 
-	virtual int generateRandomValue() override;
+	virtual int generateRandomValue() const override;
 protected:
 	// Reads from a string a concrete value
 	virtual int readSingleValue(std::string& singleValueStr) override;
@@ -158,30 +177,42 @@ protected:
 class TestAnnotation_Vector : public ITestAnnotation<FVector3f>
 {
 public:
-	TestAnnotation_Vector(const std::string& genericAnnotation);
+	TestAnnotation_Vector(){}
+	virtual bool Init(const std::string& genericAnnotation) override;
 
-	virtual FVector3f generateRandomValue() override;
+	virtual FVector3f generateRandomValue() const override;
+
 protected:
 	// Reads from a string a concrete value
 	virtual FVector3f readSingleValue(std::string& singleValueStr) override;
 };
 
 
+ enum class TestParamsSuggestionStrategy : uint8_t
+ {
+ 	TESTPARAMSTRATEGY_RANDOM,
+	TESTPARAMSSTRATEGY_RL 
+ };
+
 // This class contains all variables annotations inside a test
 class SingleTestAnnotations
 {
 public:
+	const UClass* m_classToTest;
+	TArray<AActor> m_allTestActors; // All actors of this class 
 	TMap<FString, IGenericTestAnnotation*> m_VariableNameToAnnotationData;
 };
 
 using MapFromTestNameToAnnotations = TMap<FString, SingleTestAnnotations>;
 
-// Holds specificiations about a sequence of tests and their variable ranges, inputs, outputs, etc
-class TestsAnnotationsParser
+class TestsAnnotationsHelper
 {
 public:
-	// Builds annotations and tests from a spec json file
+	// Builds specificiations about a sequence of tests and their variable ranges, inputs, outputs, etc
 	static bool ParseTestsAnnotationsFromJSon(const FString& FilePath, MapFromTestNameToAnnotations& outTestsAndAnnotations);
+
+	// Gets the properties and puts them in the target actor from a given strategy
+	static bool BuildTestInstance(const UWorld* worldContext, const TestParamsSuggestionStrategy strategy, AActor* targetTestActor, const SingleTestAnnotations& testAnnotations);
 
 private:
 };

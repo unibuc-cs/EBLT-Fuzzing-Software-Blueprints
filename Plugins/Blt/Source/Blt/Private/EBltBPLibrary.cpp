@@ -73,21 +73,25 @@ bool Annotation_BaseTests::RunTest(FString const& Parameters)
 {
 	const auto Tolerance = KINDA_SMALL_NUMBER;
 
-	const TestAnnotation_Float test1("[min=0.8, max=1.2]");
+	TestAnnotation_Float test1;
+	test1.Init("[min=0.8, max=1.2]");
 	TestEqual("min val annotation ", test1.GetMinVal(), 0.8f);
 	TestEqual("max val annotation ", test1.GetMaxVal(), 1.2f);
 
 
-	const TestAnnotation_Float test2("{100 # 200 # 300}");
+	TestAnnotation_Float test2;
+	test2.Init("{100 # 200 # 300}");
 	TestEqual("annotation type", test2.GetType(), VariableAnnotationType::VARANNOTATION_AS_SET);
 	TestEqual("value on pos 2 ", test2.GetValues()[2], 300, Tolerance);
 
 
-	const TestAnnotation_Vector test3("{(-2330.000000,-1970.000000,543.147949) # (-1709.232910,-1860.210449,411.586578)}");
+	TestAnnotation_Vector test3;
+	test3.Init("{(-2330.000000,-1970.000000,543.147949) # (-1709.232910,-1860.210449,411.586578)}");
 	TestEqual("annotation type", test3.GetType(), VariableAnnotationType::VARANNOTATION_AS_SET);
 	TestEqual("second value z ", (float)test3.GetValues()[1].Z, 411.586578f, Tolerance);
 
-	const TestAnnotation_Vector test4("[min=(-2330.000000,-1970.000000,543.147949),max=(-1709.232910,-1860.210449,411.586578)]");
+	TestAnnotation_Vector test4;
+	test4.Init("[min=(-2330.000000,-1970.000000,543.147949),max=(-1709.232910,-1860.210449,411.586578)]");
 	TestEqual("annotation type", test4.GetType(), VariableAnnotationType::VARANNOTATIONS_AS_RANGE);
 	TestEqual("max val annotation ", (float)test4.GetMaxVal().Y, -1860.210449f, Tolerance);
 
