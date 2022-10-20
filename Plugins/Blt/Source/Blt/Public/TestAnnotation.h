@@ -6,6 +6,7 @@
 #include "Misc/AssertionMacros.h"
 #include "EBLTCommonUtils.h"
 #include "UObject/Object.h"
+#include "HAL/Platform.h"
 
 #pragma optimize("", off)
 
@@ -28,7 +29,13 @@ enum class VariableAnnotationType : int8_t
 	VARANNOTATIONS_AS_RANGE, // As range of values
 };
 
-class IGenericTestAnnotation : public UObject
+enum class VariableCheckType : int8_t
+{
+	VARCHECK_AT_END_ONLY, // at end
+	VARCHECK_FRAME_SAMPLE, // Sampled at a speed defined
+};
+
+class IGenericVarAnnotation
 {
 public:
 	const FProperty* m_parentUEPropertyRef = nullptr;
@@ -39,13 +46,23 @@ public:
 
 	virtual TestVariableType GetTestVariableType() const { return m_testVariableType; }
 
+	virtual void setOutputType(VariableCheckType varType, uint32_t sampleRate = -1)
+	{
+		m_outputCheckType		= varType;
+		m_outputTicksToCheckAt	= sampleRate;
+	}
+
 protected:
 	bool m_isValid = false;
 	TestVariableType m_testVariableType = TestVariableType::TEST_VAR_DONOTTEST;
+
+	// For output variables only - should separate classess/interfaces
+	VariableCheckType m_outputCheckType = VariableCheckType::VARCHECK_AT_END_ONLY;
+	uint32 m_outputTicksToCheckAt = 1; // Intervals between checks if samples are requested
 };
 
 template <typename T>
-class ITestAnnotation : public IGenericTestAnnotation
+class IVarAnnotation : public IGenericVarAnnotation
 {
 
 	template< size_t N >
@@ -61,7 +78,7 @@ class ITestAnnotation : public IGenericTestAnnotation
 	static constexpr int GItems_MinMax_Size = length(GItems_Min_Str);
 
 public:
-	virtual ~ITestAnnotation() {}
+	virtual ~IVarAnnotation() {}
 	virtual T generateRandomValue() const = 0;
 
 	virtual bool readAllValues(const std::string& genericAnnotation)
@@ -150,10 +167,10 @@ protected:
 	T m_maxVal;
 };
 
-class TestAnnotation_Float : public ITestAnnotation<float>
+class VarAnnotation_Float : public IVarAnnotation<float>
 {
 public:
-	TestAnnotation_Float() {}
+	VarAnnotation_Float() {}
 	virtual bool Init(const std::string& genericAnnotation) override;
 
 	virtual float generateRandomValue() const override;
@@ -162,10 +179,10 @@ protected:
 	virtual float readSingleValue(std::string& singleValueStr) override;
 };
 
-class TestAnnotation_Int : public ITestAnnotation<int>
+class VarAnnotation_Int : public IVarAnnotation<int>
 {
 public:
-	TestAnnotation_Int();
+	VarAnnotation_Int() {}
 	virtual bool Init(const std::string& genericAnnotation) override;
 
 	virtual int generateRandomValue() const override;
@@ -174,10 +191,10 @@ protected:
 	virtual int readSingleValue(std::string& singleValueStr) override;
 };
 
-class TestAnnotation_Vector : public ITestAnnotation<FVector3f>
+class VarAnnotation_Vector : public IVarAnnotation<FVector3f>
 {
 public:
-	TestAnnotation_Vector(){}
+	VarAnnotation_Vector(){}
 	virtual bool Init(const std::string& genericAnnotation) override;
 
 	virtual FVector3f generateRandomValue() const override;
@@ -201,7 +218,8 @@ public:
 	AActor* m_spawnedTestActorForTest = nullptr;
 	UClass* m_classToTest = nullptr;
 	TArray<AActor> m_allTestActors; // All actors of this class 
-	TMap<FString, IGenericTestAnnotation*> m_VariableNameToAnnotationData;
+	TMap<FString, IGenericVarAnnotation*> m_InputVarToAnnotationData;
+	TMap<FString, IGenericVarAnnotation*> m_OutputVarToAnnotationData;
 };
 
 using MapFromTestNameToAnnotations = TMap<FString, SingleTestAnnotations>;
