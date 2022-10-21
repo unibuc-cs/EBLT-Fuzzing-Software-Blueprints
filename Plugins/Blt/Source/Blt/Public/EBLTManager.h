@@ -36,7 +36,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Triggers")
 	void RunTestSuite();
+
+	UFUNCTION(BlueprintCallable, Category = "Triggers")
 	void InitTestsSuite();
 
 	UFUNCTION(BlueprintNativeEvent)

@@ -112,6 +112,59 @@ FVector3f VarAnnotation_Vector::readSingleValue(std::string& singleValueStr)
 	return res;
 }
 
+bool VarAnnotation_Entity::Init(const std::string& genericAnnotation)
+{
+	m_testVariableType = TestVariableType::TEST_VAR_OBJECT;
+
+	return readAllValues(genericAnnotation);
+}
+
+AActor* VarAnnotation_Entity::generateRandomValue() const
+{
+	if (m_eAnnotationType == VariableAnnotationType::VARANNOTATION_AS_SET)
+	{
+		return m_setOfValues[rand() % m_setOfValues.size()];
+	}
+	else
+	{
+		ensure(false);
+		return nullptr;
+	}
+}
+
+AActor* VarAnnotation_Entity::readSingleValue(std::string& singleValueStr)
+{
+	UWorld* world = GetWorldForTests();
+	IVarAnnotation::readSingleValue(singleValueStr);
+
+	//char buff_out[256];
+	//const int numRead = sscanf_s(singleValueStr.c_str(), "%s", buff_out);
+	//m_isValid = m_isValid && (numRead == 1);
+
+	// COuld use tags to be much easier - for instance tag all test entitiies with something
+	const FString entityNameAsString = FString(singleValueStr.c_str());
+
+	TArray<AActor*> outAllActors;
+	UGameplayStatics::GetAllActorsOfClassWithTag(world, AActor::StaticClass(), FName( "EBLT"), outAllActors);
+
+	AActor* foundActor = nullptr;
+	for (AActor* actor : outAllActors)
+	{
+		
+		if (actor->GetActorNameOrLabel().Contains(entityNameAsString))
+		{
+			foundActor = actor;
+			break;
+		}
+	}
+
+	m_isValid = m_isValid && (foundActor != nullptr);
+
+	ensureMsgf(foundActor, TEXT("Could not find actor named %s"), *entityNameAsString);
+	return foundActor;
+}
+
+
 
 class VariableAnnotationFactory
 {
@@ -133,8 +186,8 @@ public:
 			ensureMsgf(jsonVarSpec->Type == EJson::Object, TEXT("This function supports for now just these types"));
 			ensureMsgf(jsonVarSpec->AsObject()->Values.Contains("type") && jsonVarSpec->AsObject()->Values.Contains("value"), TEXT("The object does not contains type and value keys"));
 
-			jsonValueSpecStr = std::string(TCHAR_TO_UTF8(*jsonVarSpec->AsObject()->Values.Find("type")->Get()->AsString()));
-			jsonValueSpecType = std::string(TCHAR_TO_UTF8( *jsonVarSpec->AsObject()->Values.Find("value")->Get()->AsString()));
+			jsonValueSpecType = std::string(TCHAR_TO_UTF8(*jsonVarSpec->AsObject()->Values.Find("type")->Get()->AsString()));
+			jsonValueSpecStr = std::string(TCHAR_TO_UTF8( *jsonVarSpec->AsObject()->Values.Find("value")->Get()->AsString()));
 		}
 
 		// Is Float / Int ?
@@ -160,6 +213,12 @@ public:
 			res = new VarAnnotation_Vector;
 			res->Init(jsonValueSpecStr);
 		}
+		else if (CastField<FObjectProperty>(targetProperty))
+		{
+			
+			res = new VarAnnotation_Entity;
+			res->Init(jsonValueSpecStr);
+		}
 
 		ensureMsgf(res->IsValid(), TEXT("Your data for format wasn't valid"));
 
@@ -178,7 +237,7 @@ public:
 			}
 			else
 			{
-				const int numRead = sscanf_s(jsonValueSpecStr.c_str(), "continuous-%d", &sampleRate);
+				const int numRead = sscanf_s(jsonValueSpecType.c_str(), "continuous-%d", &sampleRate);
 				ensure(numRead == 1);
 				checkType = VariableCheckType::VARCHECK_FRAME_SAMPLE;
 			}
@@ -324,9 +383,21 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 							const VarAnnotation_Float* asFloat = (VarAnnotation_Float*)varAnnotation;
 							const float val = asFloat->generateRandomValue();
 							const FFloatProperty* propRef = CastField<FFloatProperty>(varAnnotation->m_parentUEPropertyRef);
+							if (propRef)
+							{
+								float* targetValPtr = (float*)propRef->ContainerPtrToValuePtr<float>(actor);
+								propRef->SetFloatingPointPropertyValue(targetValPtr, (double)val);
+							}
+							else
+							{
+								const FDoubleProperty* propRef_asDouble = CastField<FDoubleProperty>(varAnnotation->m_parentUEPropertyRef);
 
-							float* targetValPtr = (float*)propRef->ContainerPtrToValuePtr<float>(actor);
-							propRef->SetFloatingPointPropertyValue(targetValPtr, (double)val);
+								if (propRef_asDouble)
+								{
+									double* targetValPtr = (double*)propRef_asDouble->ContainerPtrToValuePtr<double>(actor);
+									propRef_asDouble->SetFloatingPointPropertyValue(targetValPtr, (double)val);
+								}
+							}
 						}
 						break;
 
@@ -339,6 +410,18 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 							int* targetValPtr = (int*)propRef->ContainerPtrToValuePtr<int>(actor);
 							propRef->SetFloatingPointPropertyValue(targetValPtr, val);
 						}
+						break;
+
+						case TestVariableType::TEST_VAR_OBJECT:
+						{
+							const VarAnnotation_Entity* asEntity = (VarAnnotation_Entity*)varAnnotation;
+							const AActor* val = asEntity->generateRandomValue();
+							const FObjectProperty* propRef = CastField<FObjectProperty>(varAnnotation->m_parentUEPropertyRef);
+
+							const AActor* const* targetValPtr = propRef->ContainerPtrToValuePtr<AActor*>(actor);
+							*((AActor**)targetValPtr) = (AActor * )val;
+						}
+
 						break;
 
 						default:

@@ -204,6 +204,19 @@ protected:
 	virtual FVector3f readSingleValue(std::string& singleValueStr) override;
 };
 
+class VarAnnotation_Entity : public IVarAnnotation<AActor*>
+{
+public:
+	VarAnnotation_Entity() {}
+	virtual bool Init(const std::string& genericAnnotation) override;
+
+	virtual AActor* generateRandomValue() const override;
+
+protected:
+	// Reads from a string a concrete value
+	virtual AActor* readSingleValue(std::string& singleValueStr) override;
+};
+
 
  enum class TestParamsSuggestionStrategy : uint8_t
  {
@@ -217,7 +230,6 @@ class SingleTestAnnotations
 public:
 	AActor* m_spawnedTestActorForTest = nullptr;
 	UClass* m_classToTest = nullptr;
-	TArray<AActor> m_allTestActors; // All actors of this class 
 	TMap<FString, IGenericVarAnnotation*> m_InputVarToAnnotationData;
 	TMap<FString, IGenericVarAnnotation*> m_OutputVarToAnnotationData;
 };

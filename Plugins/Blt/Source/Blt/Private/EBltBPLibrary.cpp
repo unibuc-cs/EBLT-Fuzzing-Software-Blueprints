@@ -4,6 +4,7 @@
 
 #include "AIController.h"
 #include "EBLTManager.h"
+#include "EBLTTestTemplate.h"
 #include "FuzzingFlags.h"
 #include "Kismet/GameplayStatics.h"
 #include "PythonBridge.h"
@@ -15,24 +16,13 @@
 #include "Serialization/JsonSerializer.h"
 
 #include "TestAnnotation.h"
+#include "Editor/EditorEngine.h"
 
 
 #pragma optimize("", off)
 
 ///////////// DEMO DELETE
 
-// Gets the UWorld for tests
-static UWorld* GetWorldForTests()
-{
-	if (GEngine)
-	{
-		if (const FWorldContext* WorldContext = GEngine->GetWorldContextFromPIEInstance(0))
-		{
-			return WorldContext->World();
-		}
-	}
-	return nullptr;
-}
 
 // Needed to exit from the current opened map.
 static void ExitCurrentOpenedMap()
@@ -136,11 +126,15 @@ UClass* UEBltBPLibrary::FindClass(const FString& ClassName, const bool& bExactCl
 	check(*ClassName);
 	UObject* const Outer = Package ? Package : ANY_PACKAGE;
 
+	UWorld* world = GetWorldForTests();//Cast<UEditorEngine>(GEngine)->GetEditorWorldContext().World();
+
 	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorldForTests(), AActor::StaticClass(), FoundActors);
+	UGameplayStatics::GetAllActorsOfClass(world, AEBLTTestTemplate::StaticClass(), FoundActors);
 	
 	if (UClass* const ClassType = FindObject<UClass>(Outer, *ClassName, bExactClass))
 		return ClassType;
+
+	L"EBLTTest_Ex1.EBLTTest_Ex1_C"
 
 	if (const UObjectRedirector* const RenamedClassRedirector
 		= FindObject<UObjectRedirector>(Outer, *ClassName, bExactClass))

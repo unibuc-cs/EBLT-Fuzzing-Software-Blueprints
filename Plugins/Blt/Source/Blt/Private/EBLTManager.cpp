@@ -80,6 +80,8 @@ void AEBLTManager::OnMoveCompletedEvent_Implementation(FAIRequestID RequestID, E
 
 void AEBLTManager::RunTestSuite()
 {
+	//InitTestsSuite();
+
 	// Spawn test actors according to the strategy and stuff
 	// TODO
 
@@ -103,6 +105,8 @@ void AEBLTManager::RunTestSuite()
 
 void AEBLTManager::InitTestsSuite()
 {
+	m_testNamesToAnnotations.Empty();
+
 	// Step 1: parse the annotations and make internal setups
 	TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(AnnotationsPath.FilePath, m_testNamesToAnnotations);
 
