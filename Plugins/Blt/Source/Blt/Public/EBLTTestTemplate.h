@@ -49,6 +49,6 @@ public:
 	AEBLTManager* m_ebltManager = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "TestInterns")
-	EBLTTestStatus m_EBLTTestStatus = EBLTTestStatus::EBLTTest_NotRunning;
+	EBLTTestStatus m_EBLTTestStatus = EBLTTestStatus::EBLTTest_NotSetup;
 	
 };

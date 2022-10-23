@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "Misc/OutputDeviceNull.h"
 #include "EBltBPLibrary.h"
+#include "EBLTTestTemplate.h"
 
 #pragma optimize("", off)
 
@@ -22,7 +23,7 @@ void AEBLTManager::BeginPlay()
 
 	InitTestsSuite();
 }
-
+ 
 // Called every frame
 void AEBLTManager::Tick(float DeltaTime)
 {
@@ -80,8 +81,6 @@ void AEBLTManager::OnMoveCompletedEvent_Implementation(FAIRequestID RequestID, E
 
 void AEBLTManager::RunTestSuite()
 {
-	//InitTestsSuite();
-
 	// Spawn test actors according to the strategy and stuff
 	// TODO
 
@@ -91,7 +90,7 @@ void AEBLTManager::RunTestSuite()
 		const FString& testName = testData.Key;
 		SingleTestAnnotations& testSpecs = testData.Value;
 
-		// 
+		//
 		TestsAnnotationsHelper::BuildTestInstance(GetWorld(), TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM, 
 												testSpecs.m_spawnedTestActorForTest, testSpecs);
 

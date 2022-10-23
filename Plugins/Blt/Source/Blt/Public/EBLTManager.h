@@ -9,7 +9,7 @@
 #include "EBLTManager.generated.h"
 
 
-
+class UBlueprintGeneratedClass;
 
 class EBLTTestingStrategy
 {
@@ -55,5 +55,8 @@ public:
 	FFilePath AnnotationsPath;
 
 	void OnMoveCompletedEvent_Implementation(FAIRequestID RequestID, EPathFollowingResult::Type Result);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (RelativePath))
+	TArray<UBlueprintGeneratedClass*> AllowedTestInstances;
 
 };

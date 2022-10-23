@@ -133,13 +133,11 @@ UClass* UEBltBPLibrary::FindClass(const FString& ClassName, const bool& bExactCl
 	
 	if (UClass* const ClassType = FindObject<UClass>(Outer, *ClassName, bExactClass))
 		return ClassType;
-
-	L"EBLTTest_Ex1.EBLTTest_Ex1_C"
-
+	
 	if (const UObjectRedirector* const RenamedClassRedirector
 		= FindObject<UObjectRedirector>(Outer, *ClassName, bExactClass))
 		return CastChecked<UClass>(RenamedClassRedirector->DestinationObject);
-
+	
 	UE_LOG(LogBlt, Warning, TEXT("Class %s could not be found!"), *ClassName);
 	return nullptr;
 }

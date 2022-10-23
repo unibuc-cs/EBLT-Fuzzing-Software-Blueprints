@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "EBltBPLibrary.h"
+#include "EBLTTestTemplate.h"
 #include "EngineUtils.h"
 
 #include "Containers/StringConv.h"
@@ -263,6 +264,15 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 		return false;
 	}
 
+#if 0
+	UClass* Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/EBLT/EBLTTest_Ex1.EBLTTest_Ex1"), nullptr, LOAD_None, nullptr);
+	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/EBLT/EBLTTest_Ex1.EBLTTest_Ex1_C"), nullptr, LOAD_None, nullptr);
+	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/EBLT/EBLTTest_Ex1"));
+	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/Game/EBLTTest_Ex1_C"));
+	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/Game/EBLT/EBLTTest_Ex1.EBLTTest_Ex1_C"), nullptr, LOAD_None, nullptr);
+	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/Game/EBLTTest_Ex1.EBLTTest_Ex1_C"), nullptr, LOAD_None, nullptr);
+#endif
+
 	const TMap<FString, TSharedPtr<FJsonValue>> JsonClasses = JsonParsed.Get()->Values;
 	for (const TTuple<FString, TSharedPtr<FJsonValue>>& BlueprintToTestClassDef : JsonClasses)
 	{
@@ -346,6 +356,8 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 												AActor* targetTestActor, 
 												const SingleTestAnnotations& testAnnotations)
 {
+	AActor* actor = testAnnotations.m_spawnedTestActorForTest;
+
 	switch(strategy)
 	{
 	case TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM:
@@ -357,7 +369,7 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 
 			// For each actor, just randomize properties according to the annotations
 //			for (const AActor* actor : outAllActors)
-		const AActor* actor = testAnnotations.m_spawnedTestActorForTest;
+			
 			{
 				for (const TPair<FString, IGenericVarAnnotation*>& varSpec : testAnnotations.m_InputVarToAnnotationData)
 				{
@@ -373,8 +385,10 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 							const FStructProperty* propRef = CastField<FStructProperty>(varAnnotation->m_parentUEPropertyRef);
 
 
-							FVector3f * targetValPtr = (FVector3f*) propRef->ContainerPtrToValuePtr<FVector3f>(actor);
-							* targetValPtr = val;
+							FVector * targetValPtr = (FVector*) propRef->ContainerPtrToValuePtr<FVector>(actor);
+							targetValPtr->X = val.X;
+							targetValPtr->Y = val.Y;
+							targetValPtr->Z = val.Z;
 						}
 						break;
 
@@ -440,6 +454,8 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 		ensureMsgf(false, TEXT("Next submission"));
 		}
 	}
+
+	Cast<AEBLTTestTemplate>(actor)->InternalTestSetupContext();
 
 	return true;
 }

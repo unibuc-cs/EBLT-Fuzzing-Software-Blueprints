@@ -34,6 +34,8 @@ void AEBLTTestTemplate::InternalTestSetupContext_Implementation()
 	{
 		//DestroyActor(this);
 	}
+
+	m_EBLTTestStatus = EBLTTestStatus::EBLTTest_NotRunning;
 }
 
 // Called every frame
@@ -41,10 +43,17 @@ void AEBLTTestTemplate::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_NotRunning)
-		CheckTriggers();
 
-	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Failed)
+	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_NotSetup)
+	{
+		// Nothing to do
+	}
+
+	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_NotRunning)
+	{
+		CheckTriggers();
+	}
+	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Failed)
 	{
 		 // TODO: destroy this actor !!! report test failed to manager
 	}
