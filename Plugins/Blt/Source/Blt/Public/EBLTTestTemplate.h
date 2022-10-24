@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "EBltBPLibrary.h"
+#include "TestAnnotation.h"
 #include "EBLTTestTemplate.generated.h"
 
 UCLASS()
@@ -31,13 +32,15 @@ public:
 
 	EBLTTestStatus CheckTestCorrectness_Implementation();
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "EBLT/TestsDefinition")
-	void InternalTestSetupContext();
-
-	void InternalTestSetupContext_Implementation();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "EBLT/TestsDefinition")
+	void OnContextSetupFinished();
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	void Internal_SetupContext();
+
+	void SetTestAnnotations(SingleTestAnnotations* TestAnnotations) { m_testAnnotations = TestAnnotations; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -50,5 +53,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "TestInterns")
 	EBLTTestStatus m_EBLTTestStatus = EBLTTestStatus::EBLTTest_NotSetup;
+
+private:
+	SingleTestAnnotations* m_testAnnotations = nullptr;
 	
 };

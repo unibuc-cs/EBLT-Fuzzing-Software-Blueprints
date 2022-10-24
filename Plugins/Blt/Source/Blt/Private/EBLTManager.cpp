@@ -120,6 +120,7 @@ void AEBLTManager::InitTestsSuite()
 		AActor* testActor = GetWorld()->SpawnActor(testSpecs.m_classToTest);
 		ensureMsgf(testActor, TEXT("couldnt spawn the testing actor"));
 		testSpecs.m_spawnedTestActorForTest = testActor;
+		Cast<AEBLTTestTemplate>(testSpecs.m_spawnedTestActorForTest)->SetTestAnnotations(&testSpecs);
 	}
 }
 

@@ -455,7 +455,7 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 		}
 	}
 
-	Cast<AEBLTTestTemplate>(actor)->InternalTestSetupContext();
+	Cast<AEBLTTestTemplate>(actor)->Internal_SetupContext();
 
 	return true;
 }

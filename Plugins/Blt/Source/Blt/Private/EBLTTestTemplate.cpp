@@ -6,6 +6,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "EBLTManager.h"
 
+#pragma optimize("", off)
+
 // Sets default values
 AEBLTTestTemplate::AEBLTTestTemplate()
 {
@@ -21,7 +23,7 @@ void AEBLTTestTemplate::BeginPlay()
 
 }
 
-void AEBLTTestTemplate::InternalTestSetupContext_Implementation()
+void AEBLTTestTemplate::Internal_SetupContext()
 {
 	TArray<AActor*> OutActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEBLTManager::StaticClass(), OutActors);
@@ -36,6 +38,7 @@ void AEBLTTestTemplate::InternalTestSetupContext_Implementation()
 	}
 
 	m_EBLTTestStatus = EBLTTestStatus::EBLTTest_NotRunning;
+	OnContextSetupFinished();
 }
 
 // Called every frame
@@ -85,7 +88,37 @@ bool AEBLTTestTemplate::CheckTriggers_Implementation()
 
 EBLTTestStatus AEBLTTestTemplate::CheckTestCorrectness_Implementation()
 {
-	// To implement in children
+	ensure(m_testAnnotations->m_spawnedTestActorForTest == this);
+
+	for (auto& it : m_testAnnotations->m_OutputVarToAnnotationData)
+	{
+		const FString& varName = it.Key;
+		const IGenericVarAnnotation* varAnnotation = it.Value;
+
+		if (varAnnotation->m_outputCheckType == VariableCheckType::VARCHECK_FRAME_SAMPLE)
+		{
+			// TODO: check tick limits. Need to finish the implementation of allowing testing at different sample rates.
+			// E.g. hold a frame counter..
+
+
+			// Now read the content of the variable
+			// TODO: implemented for other types too.
+			if (varAnnotation->GetTestVariableType() == TestVariableType::TEST_VAR_FLOAT)
+			{
+				const VarAnnotation_Float* annotationAsFloat = (VarAnnotation_Float*)varAnnotation;
+				const FDoubleProperty* propertyAsFloat = Cast<FDoubleProperty>(varAnnotation->m_parentUEPropertyRef);
+				double* value = propertyAsFloat->GetPropertyValuePtr_InContainer(this);
+
+				if (*value > annotationAsFloat->GetMaxVal())
+				{
+					m_EBLTTestStatus = EBLTTestStatus::EBLTTest_Failed;
+				}
+			}
+		}
+	}
+
+
 	return m_EBLTTestStatus;
 }
 
+#pragma optimize("", on)

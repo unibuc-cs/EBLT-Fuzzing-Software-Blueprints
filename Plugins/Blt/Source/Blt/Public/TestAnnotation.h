@@ -52,13 +52,15 @@ public:
 		m_outputTicksToCheckAt	= sampleRate;
 	}
 
-protected:
-	bool m_isValid = false;
-	TestVariableType m_testVariableType = TestVariableType::TEST_VAR_DONOTTEST;
 
 	// For output variables only - should separate classess/interfaces
 	VariableCheckType m_outputCheckType = VariableCheckType::VARCHECK_AT_END_ONLY;
 	uint32 m_outputTicksToCheckAt = 1; // Intervals between checks if samples are requested
+
+protected:
+	bool m_isValid = false;
+	TestVariableType m_testVariableType = TestVariableType::TEST_VAR_DONOTTEST;
+
 };
 
 template <typename T>
