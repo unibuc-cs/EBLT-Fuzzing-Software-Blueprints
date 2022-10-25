@@ -30,45 +30,11 @@ void AEBLTManager::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 
-	bool runTestSuite = false;
-	if (runTestSuite)
+	// Do not it idle :)
+	// TODO: clusterize this operation, put it on VMs with Docker, etc ! See the tasks list
+	if (m_state == EBLTManagerState::EBLT_Idle)
 	{
 		RunTestSuite();
-	}
-
-
-	bool runTest = false;
-	if (runTest)
-	{
-		runTest = false;
-		
-		AActor* targetDestActor = nullptr;
-
-		//in cpp
-		for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
-		{
-			if (ActorItr->GetName().Contains(("BP_Checkpoint2")))
-			{
-				targetDestActor = *ActorItr;
-			}
-		}
-
-		AActor* targetTestActor = nullptr;
-
-		//in cpp
-		for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
-		{
-			if (ActorItr->GetName().Contains(("NPC_EpicCharacter")))
-			{
-				targetTestActor = *ActorItr;
-			}
-		}
-
-		//FOutputDeviceNull ar;
-		//const FString command = FString::Printf(TEXT("Test_PathfindingPathStr %s"), *targetDestActor->GetName());
-		//this->CallFunctionByNameWithArguments(*command, ar, NULL, true);
-
-		//RunPathfindingTest(targetDestActor, targetTestActor);
 	}
 }
 
@@ -81,27 +47,29 @@ void AEBLTManager::OnMoveCompletedEvent_Implementation(FAIRequestID RequestID, E
 
 void AEBLTManager::RunTestSuite()
 {
-	// Spawn test actors according to the strategy and stuff
-	// TODO
+	UE_LOG(LogBlt, Warning, TEXT("=========== RUNNING A NEW TEST SUITE ==========="));
+
+	ensureMsgf(m_currentlyRunningTests.IsEmpty(), TEXT("You are currently trying to run a new test suite but existing one is in progres !!!!"));
+
+	// Step 0: get a set of tests to select and the strategy used for fuzzing input variables
+	TArray<FString> selectedTests;
+	TestParamsSuggestionStrategy testStrategy = TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM;
+	GetTestsToRun(selectedTests, testStrategy);
 
 	// For each selected test set an instance with parameter and run it
-	for (TPair<FString, SingleTestAnnotations>& testData : m_testNamesToAnnotations)
+	for (const FString& selectedTestName : selectedTests)
 	{
-		const FString& testName = testData.Key;
-		SingleTestAnnotations& testSpecs = testData.Value;
+		SingleTestAnnotations& testSpecs = m_testNamesToAnnotations[selectedTestName];
 
-		//
-		TestsAnnotationsHelper::BuildTestInstance(GetWorld(), TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM, 
-												testSpecs.m_spawnedTestActorForTest, testSpecs);
-
+		TestsAnnotationsHelper::BuildTestInstance(GetWorld(), testStrategy, testSpecs.m_spawnedTestActorForTest, testSpecs);
+		m_currentlyRunningTests.Add(CastChecked<AEBLTTestTemplate>(testSpecs.m_spawnedTestActorForTest));
 	}
-	//
 
 
-	// Wait for tests to complete
-	// TODO
+	m_state = EBLTManagerState::EBLT_RunningSuite;
 }
 
+// Init all tests basically
 void AEBLTManager::InitTestsSuite()
 {
 	m_testNamesToAnnotations.Empty();
@@ -120,8 +88,47 @@ void AEBLTManager::InitTestsSuite()
 		AActor* testActor = GetWorld()->SpawnActor(testSpecs.m_classToTest);
 		ensureMsgf(testActor, TEXT("couldnt spawn the testing actor"));
 		testSpecs.m_spawnedTestActorForTest = testActor;
-		Cast<AEBLTTestTemplate>(testSpecs.m_spawnedTestActorForTest)->SetTestAnnotations(&testSpecs);
+		AEBLTTestTemplate* testTemplateActor = Cast<AEBLTTestTemplate>(testSpecs.m_spawnedTestActorForTest);
+		testTemplateActor->SetTestAnnotations(&testSpecs);
+		testTemplateActor->SetGivenName(testName);
 	}
+}
+
+void AEBLTManager::GetTestsToRun(TArray<FString>& outTestsToRun, TestParamsSuggestionStrategy& outTestingStrategy) const
+{
+	// TODO: see tasks list !
+	// 1: strategy pattern to select by reading properties
+	// 2: this need to be a flask process deployed in a different process.
+	// 3: as a demo app, just run all tests / random for now
+	outTestsToRun.Empty();
+
+	for (const auto& it : m_testNamesToAnnotations)
+	{
+		outTestsToRun.Add(it.Key);
+	}
+
+	// 4: get a strategy and simulator instance to use too !
+	outTestingStrategy = TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM;
+}
+
+void AEBLTManager::OnTestFinished(AEBLTTestTemplate* testWhoFinished, const EBLTTestStatus finishedStatus)
+{
+	UE_LOG(LogBlt, Warning, TEXT(" ## Test %s was finished"), *testWhoFinished->GetGivenName());
+
+	// Remove the test actor from the set of running and destroy it
+	m_currentlyRunningTests.Remove(testWhoFinished);
+	testWhoFinished->Destroy();
+
+
+	// If currently running tests is emtpy move back to idle
+	if (m_currentlyRunningTests.Num() == 0)
+	{
+		if (m_continuousTestRunning)
+		{
+			m_state = EBLTManagerState::EBLT_Idle;
+		}
+	}
+	
 }
 
 

@@ -35,12 +35,25 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "EBLT/TestsDefinition")
 	void OnContextSetupFinished();
 
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "EBLT/TestsDefinition")
+	void OnTestFailed();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "EBLT/TestsDefinition")
+	void OnTestSucceeded();
+
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	void Internal_SetupContext();
+	EBLTTestStatus Internal_CheckTestCorrectness();
+
+	void Internal_OnTestFinished();
 
 	void SetTestAnnotations(SingleTestAnnotations* TestAnnotations) { m_testAnnotations = TestAnnotations; }
+
+	void SetGivenName(const FString& name) { m_givenName = name; }
+	const FString& GetGivenName() const { return m_givenName; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -56,5 +69,5 @@ public:
 
 private:
 	SingleTestAnnotations* m_testAnnotations = nullptr;
-	
+	FString m_givenName;
 };

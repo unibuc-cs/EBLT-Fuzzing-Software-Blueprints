@@ -46,7 +46,10 @@ void AEBLTTestTemplate::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	EBLTTestStatus prevTestStatus = m_EBLTTestStatus;
 
+
+	// Step 0 : Check proper action against current state
 	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_NotSetup)
 	{
 		// Nothing to do
@@ -60,19 +63,47 @@ void AEBLTTestTemplate::Tick(float DeltaTime)
 	{
 		 // TODO: destroy this actor !!! report test failed to manager
 	}
-	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_InProgress)
-	{
-		m_EBLTTestStatus = CheckTestCorrectness();
-	}
 	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Success)
 	{
-		 // TODO: destroy the actor, report this test as being successful
+		// TODO: destroy the actor, report this test as being successful
 	}
+	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_InProgress)
+	{
+		m_EBLTTestStatus = Internal_CheckTestCorrectness();
+	}
+
 	else
 	{
 		ensureMsgf(false, TEXT("Unknown test status %d !"), (int)m_EBLTTestStatus);
 	}
+
+	// Step 1 : Check proper action against state change 
+	if (prevTestStatus != m_EBLTTestStatus)
+	{
+		// If finished, inform manager
+		if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Failed || m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Success)
+		{
+			AEBLTTestTemplate::Internal_OnTestFinished();
+		}
+	}
 }
+
+void AEBLTTestTemplate::Internal_OnTestFinished()
+{
+	// Call corresponding blueprints events to let them know
+
+	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Failed) 
+	{
+		OnTestFailed();
+	}
+	else
+	{
+		OnTestSucceeded();
+	}
+
+	m_ebltManager->OnTestFinished(this, m_EBLTTestStatus);
+}
+
 
 bool AEBLTTestTemplate::SetupContext_Implementation()
 {
@@ -88,6 +119,13 @@ bool AEBLTTestTemplate::CheckTriggers_Implementation()
 
 EBLTTestStatus AEBLTTestTemplate::CheckTestCorrectness_Implementation()
 {
+	return m_EBLTTestStatus;
+}
+
+
+EBLTTestStatus AEBLTTestTemplate::Internal_CheckTestCorrectness()
+{
+	// Step 1: Test foundation things that authoritive from the template test base class
 	ensure(m_testAnnotations->m_spawnedTestActorForTest == this);
 
 	for (auto& it : m_testAnnotations->m_OutputVarToAnnotationData)
@@ -106,7 +144,7 @@ EBLTTestStatus AEBLTTestTemplate::CheckTestCorrectness_Implementation()
 			if (varAnnotation->GetTestVariableType() == TestVariableType::TEST_VAR_FLOAT)
 			{
 				const VarAnnotation_Float* annotationAsFloat = (VarAnnotation_Float*)varAnnotation;
-				const FDoubleProperty* propertyAsFloat = Cast<FDoubleProperty>(varAnnotation->m_parentUEPropertyRef);
+				const FDoubleProperty* propertyAsFloat = CastField<FDoubleProperty>(varAnnotation->m_parentUEPropertyRef);
 				double* value = propertyAsFloat->GetPropertyValuePtr_InContainer(this);
 
 				if (*value > annotationAsFloat->GetMaxVal())
@@ -117,8 +155,15 @@ EBLTTestStatus AEBLTTestTemplate::CheckTestCorrectness_Implementation()
 		}
 	}
 
+	// Step 2: Check the test correctness too from the blueprint logic too if still the case
+	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_InProgress)
+	{
+		CheckTestCorrectness();
+	}
 
 	return m_EBLTTestStatus;
 }
+
+
 
 #pragma optimize("", on)

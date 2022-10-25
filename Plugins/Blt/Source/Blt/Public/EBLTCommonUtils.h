@@ -9,6 +9,18 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBlt, Log, All);
 
 #pragma optimize("", off)
 
+
+UENUM(BlueprintType)
+enum class EBLTTestStatus : uint8 // \describes the lifecycle of a blueprint test
+{
+	EBLTTest_NotSetup, // Not supposed to run
+	EBLTTest_NotRunning, // Can now check triggers
+	EBLTTest_InProgress, // Test iis in progress
+	EBLTTest_Failed,  // Test is finished with either failed or success
+	EBLTTest_Success,
+};
+
+
 class EBLTCommonUtils
 {
 public:

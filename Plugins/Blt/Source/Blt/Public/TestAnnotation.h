@@ -31,9 +31,12 @@ enum class VariableAnnotationType : int8_t
 
 enum class VariableCheckType : int8_t
 {
+	VARCHECK_INVALID, // Not a checking var
 	VARCHECK_AT_END_ONLY, // at end
 	VARCHECK_FRAME_SAMPLE, // Sampled at a speed defined
 };
+
+
 
 class IGenericVarAnnotation
 {
@@ -46,20 +49,26 @@ public:
 
 	virtual TestVariableType GetTestVariableType() const { return m_testVariableType; }
 
-	virtual void setOutputType(VariableCheckType varType, uint32_t sampleRate = -1)
+	virtual void setOutputType(VariableCheckType varType, uint32_t sampleRate, int failCode, int succeedCode)
 	{
 		m_outputCheckType		= varType;
 		m_outputTicksToCheckAt	= sampleRate;
+		m_failCode				= failCode;
+		m_succedCode			= succeedCode;
 	}
 
-
+	bool isFailOutputCondition() const;
+	
 	// For output variables only - should separate classess/interfaces
-	VariableCheckType m_outputCheckType = VariableCheckType::VARCHECK_AT_END_ONLY;
+	VariableCheckType m_outputCheckType = VariableCheckType::VARCHECK_INVALID;
 	uint32 m_outputTicksToCheckAt = 1; // Intervals between checks if samples are requested
 
+	static constexpr int VAR_ANNOTATION_INVALID_RESULT = -1;
 protected:
 	bool m_isValid = false;
 	TestVariableType m_testVariableType = TestVariableType::TEST_VAR_DONOTTEST;
+	int m_failCode = VAR_ANNOTATION_INVALID_RESULT;
+	int m_succedCode = VAR_ANNOTATION_INVALID_RESULT;
 
 };
 

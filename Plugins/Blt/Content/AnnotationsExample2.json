@@ -15,8 +15,16 @@
 		"expectedOutputs" : {
 			"timeToPathLimit" :
 			{
-				"type" : "continuous-15",
-				"value" : "[min=0.0, max=10]"
+				"type" : "continuous-60",
+				"value" : "[min=0.0, max=10]",
+				"failCode" : "1"
+			},
+
+			"movingIdleLimit" :
+			{
+				"type" : "continuous-10",
+				"value" : "[min=0.0, max=3]",
+				"failCode" : "2"
 			}
 		}
 	}

@@ -175,7 +175,7 @@ public:
 		IGenericVarAnnotation* res = nullptr;
 
 		// TODO: need more work to add support from the other pieces of code here for reusability
-		std::string jsonValueSpecStr, jsonValueSpecType;
+		std::string jsonValueSpecStr, jsonValueSpecType, failCodeStr, succeedCodeStr;
 
 		if (isInputVar)
 		{
@@ -187,8 +187,20 @@ public:
 			ensureMsgf(jsonVarSpec->Type == EJson::Object, TEXT("This function supports for now just these types"));
 			ensureMsgf(jsonVarSpec->AsObject()->Values.Contains("type") && jsonVarSpec->AsObject()->Values.Contains("value"), TEXT("The object does not contains type and value keys"));
 
+			ensureMsgf(jsonVarSpec->AsObject()->Values.Contains("failCode") ^ jsonVarSpec->AsObject()->Values.Contains("succeedCode"), TEXT("The var def doesn't contain one of the codes"));
+
 			jsonValueSpecType = std::string(TCHAR_TO_UTF8(*jsonVarSpec->AsObject()->Values.Find("type")->Get()->AsString()));
 			jsonValueSpecStr = std::string(TCHAR_TO_UTF8( *jsonVarSpec->AsObject()->Values.Find("value")->Get()->AsString()));
+
+			if (jsonVarSpec->AsObject()->Values.Contains("failCode"))
+			{
+				failCodeStr = std::string(TCHAR_TO_UTF8(*jsonVarSpec->AsObject()->Values.Find("failCode")->Get()->AsString()));
+			}
+
+			if (jsonVarSpec->AsObject()->Values.Contains("succeedCode"))
+			{
+				succeedCodeStr = std::string(TCHAR_TO_UTF8(*jsonVarSpec->AsObject()->Values.Find("succeedCode")->Get()->AsString()));
+			}
 		}
 
 		// Is Float / Int ?
@@ -242,7 +254,19 @@ public:
 				ensure(numRead == 1);
 				checkType = VariableCheckType::VARCHECK_FRAME_SAMPLE;
 			}
-			res->setOutputType(checkType, sampleRate);
+
+
+			int succeedCode = IGenericVarAnnotation::VAR_ANNOTATION_INVALID_RESULT, failCode = IGenericVarAnnotation::VAR_ANNOTATION_INVALID_RESULT;
+			if (!succeedCodeStr.empty())
+			{
+				succeedCode = std::stoi(succeedCodeStr);
+			}
+			if (!failCodeStr.empty())
+			{
+				failCode = std::stoi(failCodeStr);
+			}
+
+			res->setOutputType(checkType, sampleRate, failCode, succeedCode);
 		}
 
 		return res;
@@ -263,15 +287,6 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 		UE_LOG(LogBlt, Error, TEXT("Could not deserialize %s [check if file is JSON]"), *AbsoluteFilePath);
 		return false;
 	}
-
-#if 0
-	UClass* Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/EBLT/EBLTTest_Ex1.EBLTTest_Ex1"), nullptr, LOAD_None, nullptr);
-	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/EBLT/EBLTTest_Ex1.EBLTTest_Ex1_C"), nullptr, LOAD_None, nullptr);
-	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/EBLT/EBLTTest_Ex1"));
-	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/Game/EBLTTest_Ex1_C"));
-	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/Game/EBLT/EBLTTest_Ex1.EBLTTest_Ex1_C"), nullptr, LOAD_None, nullptr);
-	Result = LoadClass<UBlueprintGeneratedClass>(nullptr, TEXT("/Game/EBLTTest_Ex1.EBLTTest_Ex1_C"), nullptr, LOAD_None, nullptr);
-#endif
 
 	const TMap<FString, TSharedPtr<FJsonValue>> JsonClasses = JsonParsed.Get()->Values;
 	for (const TTuple<FString, TSharedPtr<FJsonValue>>& BlueprintToTestClassDef : JsonClasses)
@@ -459,6 +474,19 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 
 	return true;
 }
+
+bool IGenericVarAnnotation::isFailOutputCondition() const
+{
+	// Some sanity checks first
+	ensureMsgf(m_outputCheckType == VariableCheckType::VARCHECK_INVALID, TEXT("INvalid variable treated as output"));
+	ensureMsgf(((m_failCode != VAR_ANNOTATION_INVALID_RESULT) ^ (m_succedCode != VAR_ANNOTATION_INVALID_RESULT)) == 1, TEXT("invalid succeed / fail codes"));
+
+	if (m_failCode != VAR_ANNOTATION_INVALID_RESULT)
+		return true;
+
+	return false;
+}
+
 
 
 #pragma optimize("", on)
