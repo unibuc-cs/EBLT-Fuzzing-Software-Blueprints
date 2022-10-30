@@ -369,9 +369,15 @@ AActor* UEBltBPLibrary::SpawnTestingCharacter(const UObject* const WorldContextO
 	actorTransform.SetScale3D(UE::Math::TVector(characterScale, characterScale, characterScale));
 
 	ACharacter* actorSpawned = Cast<ACharacter>(world->SpawnActor(actorClass, &actorTransform));
-	actorSpawned->SpawnDefaultController();
+	if (actorSpawned)
+	{
+		actorSpawned->SpawnDefaultController();
 
-	Cast<AAIController>(actorSpawned->GetController())->ReceiveMoveCompleted.AddDynamic(m_ebltManager, &AEBLTManager::OnMoveCompletedEvent);
+
+		UGameplayStatics::GetPlayerController(WorldContextObject, 0)->SetViewTarget(actorSpawned);
+
+		Cast<AAIController>(actorSpawned->GetController())->ReceiveMoveCompleted.AddDynamic(m_ebltManager, &AEBLTManager::OnMoveCompletedEvent);
+	}
 	return actorSpawned;
 }
 

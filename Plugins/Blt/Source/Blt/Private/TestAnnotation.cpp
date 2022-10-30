@@ -5,10 +5,12 @@
 #include "Serialization/JsonSerializer.h"
 #include "Logging/LogMacros.h"
 #include <algorithm>
+#include <sstream>
 
 #include "EBltBPLibrary.h"
 #include "EBLTTestTemplate.h"
 #include "EngineUtils.h"
+#include "csv.hpp"
 
 #include "Containers/StringConv.h"
 #include "Kismet/GameplayStatics.h"
@@ -372,6 +374,8 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 												const SingleTestAnnotations& testAnnotations)
 {
 	AActor* actor = testAnnotations.m_spawnedTestActorForTest;
+	AEBLTTestTemplate* actorBaseTemplate = Cast<AEBLTTestTemplate>(actor);
+	ensure(actorBaseTemplate);
 
 	switch(strategy)
 	{
@@ -404,6 +408,9 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 							targetValPtr->X = val.X;
 							targetValPtr->Y = val.Y;
 							targetValPtr->Z = val.Z;
+
+
+							actorBaseTemplate->debugSetVarValue(varSpec.Key, val.ToString());
 						}
 						break;
 
@@ -425,8 +432,11 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 								{
 									double* targetValPtr = (double*)propRef_asDouble->ContainerPtrToValuePtr<double>(actor);
 									propRef_asDouble->SetFloatingPointPropertyValue(targetValPtr, (double)val);
+
 								}
 							}
+							
+							actorBaseTemplate->debugSetVarValue(varSpec.Key, FString::SanitizeFloat(val));
 						}
 						break;
 
@@ -438,6 +448,9 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 
 							int* targetValPtr = (int*)propRef->ContainerPtrToValuePtr<int>(actor);
 							propRef->SetFloatingPointPropertyValue(targetValPtr, val);
+
+							actorBaseTemplate->debugSetVarValue(varSpec.Key, FString::FromInt(val));
+
 						}
 						break;
 
@@ -449,6 +462,8 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 
 							const AActor* const* targetValPtr = propRef->ContainerPtrToValuePtr<AActor*>(actor);
 							*((AActor**)targetValPtr) = (AActor * )val;
+
+							actorBaseTemplate->debugSetVarValue(varSpec.Key, val->GetActorNameOrLabel());
 						}
 
 						break;
@@ -459,7 +474,6 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 						}
 						break;
 					}
-					
 				}
 			}
 		}
@@ -470,7 +484,7 @@ bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 		}
 	}
 
-	Cast<AEBLTTestTemplate>(actor)->Internal_SetupContext();
+	actorBaseTemplate->Internal_SetupContext();
 
 	return true;
 }

@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{5681A0FA-4ABB-A261-7BC8-C6BD2CA3DE75}",
+	"EngineAssociation": "{F2927685-43FB-309B-DFC2-2F899FBB7616}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -9,7 +9,8 @@
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
-				"Engine"
+				"Engine",
+				"CinematicCamera"
 			]
 		}
 	],

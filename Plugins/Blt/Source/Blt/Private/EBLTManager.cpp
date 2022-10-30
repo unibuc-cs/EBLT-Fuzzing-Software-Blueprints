@@ -59,7 +59,7 @@ void AEBLTManager::RunTestSuite()
 	// For each selected test set an instance with parameter and run it
 	for (const FString& selectedTestName : selectedTests)
 	{
-		SingleTestAnnotations& testSpecs = m_testNamesToAnnotations[selectedTestName];
+		const SingleTestAnnotations& testSpecs = m_testNamesToAnnotations[selectedTestName];
 
 		TestsAnnotationsHelper::BuildTestInstance(GetWorld(), testStrategy, testSpecs.m_spawnedTestActorForTest, testSpecs);
 		m_currentlyRunningTests.Add(CastChecked<AEBLTTestTemplate>(testSpecs.m_spawnedTestActorForTest));
@@ -113,7 +113,13 @@ void AEBLTManager::GetTestsToRun(TArray<FString>& outTestsToRun, TestParamsSugge
 
 void AEBLTManager::OnTestFinished(AEBLTTestTemplate* testWhoFinished, const EBLTTestStatus finishedStatus)
 {
-	UE_LOG(LogBlt, Warning, TEXT(" ## Test %s was finished"), *testWhoFinished->GetGivenName());
+	ensure(finishedStatus == EBLTTestStatus::EBLTTest_Success || finishedStatus == EBLTTestStatus::EBLTTest_Failed);
+	UE_LOG(LogBlt, Warning, TEXT(" ## Test %s was finished with code %s"), *testWhoFinished->GetGivenName(), EBLTCommonUtils::EnumToString(finishedStatus));
+
+	if (finishedStatus == EBLTTestStatus::EBLTTest_Failed)
+	{
+		testWhoFinished->OutputTestFailedCase();
+	}
 
 	// Remove the test actor from the set of running and destroy it
 	m_currentlyRunningTests.Remove(testWhoFinished);

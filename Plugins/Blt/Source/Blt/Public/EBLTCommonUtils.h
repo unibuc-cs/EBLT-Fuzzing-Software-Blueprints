@@ -25,6 +25,16 @@ class EBLTCommonUtils
 {
 public:
 
+	static constexpr const TCHAR* EnumToString(EBLTTestStatus testStatus)
+	{
+		switch(testStatus)
+		{
+		case EBLTTestStatus::EBLTTest_Success:
+			return TEXT("TestSucceeded");
+		default:
+			return TEXT("TextFailed");
+		}
+	}
 
 	// Cuts whitespaces at the beggining of a string
 	static void leftTrim(std::string& str)

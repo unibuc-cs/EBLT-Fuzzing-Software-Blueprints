@@ -50,7 +50,16 @@ public:
 
 	void Internal_OnTestFinished();
 
-	void SetTestAnnotations(SingleTestAnnotations* TestAnnotations) { m_testAnnotations = TestAnnotations; }
+	void SetTestAnnotations(SingleTestAnnotations* TestAnnotations);
+
+	// Set the string value of a variable
+	void debugSetVarValue(const FString& varName, const FString& varValue);
+
+	// Write the CSV for failure cases regarding this test
+	// Create the file to write the output failure test cases if not already there
+	// Each failed test will be on a row
+	void OutputTestFailedCase();
+
 
 	void SetGivenName(const FString& name) { m_givenName = name; }
 	const FString& GetGivenName() const { return m_givenName; }
@@ -70,4 +79,8 @@ public:
 private:
 	SingleTestAnnotations* m_testAnnotations = nullptr;
 	FString m_givenName;
+
+	// This map contains the the mapping between all variables instances and their value, as string.
+	// This can be used further for debugging purposes
+	TMap<FString, FString> m_instanceVarNameToValueStr;
 };

@@ -5,6 +5,9 @@
 #include "EBltBPLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "EBLTManager.h"
+#include <sstream>
+#include "csv.hpp"
+#include "Interfaces/IPluginManager.h"
 
 #pragma optimize("", off)
 
@@ -25,6 +28,7 @@ void AEBLTTestTemplate::BeginPlay()
 
 void AEBLTTestTemplate::Internal_SetupContext()
 {
+	// Setup context for BDD like usage
 	TArray<AActor*> OutActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEBLTManager::StaticClass(), OutActors);
 	m_ebltManager = Cast<AEBLTManager>(OutActors[0]);
@@ -147,9 +151,12 @@ EBLTTestStatus AEBLTTestTemplate::Internal_CheckTestCorrectness()
 				const FDoubleProperty* propertyAsFloat = CastField<FDoubleProperty>(varAnnotation->m_parentUEPropertyRef);
 				double* value = propertyAsFloat->GetPropertyValuePtr_InContainer(this);
 
-				if (*value > annotationAsFloat->GetMaxVal())
+				if (*value > annotationAsFloat->GetMaxVal() || *value < annotationAsFloat->GetMinVal())
 				{
 					m_EBLTTestStatus = EBLTTestStatus::EBLTTest_Failed;
+
+					// Set for debug
+					m_instanceVarNameToValueStr[varName] = FString::SanitizeFloat(*value);
 				}
 			}
 		}
@@ -164,6 +171,68 @@ EBLTTestStatus AEBLTTestTemplate::Internal_CheckTestCorrectness()
 	return m_EBLTTestStatus;
 }
 
+void AEBLTTestTemplate::SetTestAnnotations(SingleTestAnnotations* TestAnnotations)
+{
+	m_testAnnotations = TestAnnotations;
 
+	// Set the mapping expected between vars and variables value
+
+	for (auto& var : m_testAnnotations->m_InputVarToAnnotationData)
+	{
+		m_instanceVarNameToValueStr[var.Key] = FString();
+	}
+
+	for (auto& var : m_testAnnotations->m_OutputVarToAnnotationData)
+	{
+		m_instanceVarNameToValueStr[var.Key] = FString();
+	}
+}
+
+void AEBLTTestTemplate::debugSetVarValue(const FString& varName, const FString& varValue)
+{
+	m_instanceVarNameToValueStr[varName] = varValue;
+}
+
+// Write the CSV for failure cases regarding this test
+// Create the file to write the output failure test cases if not already there
+// Each failed test will be on a row
+void AEBLTTestTemplate::OutputTestFailedCase()
+{
+	std::stringstream ss;
+
+	FString Content = IPluginManager::Get().FindPlugin(TEXT("EBLT"))->GetContentDir();
+	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
+
+	const FString RelativePath = TEXT("Outputs/FailedTests/") + GetGivenName() / TEXT(".csv");
+
+	// Save all keys as header if file not already there
+	if (!FileManager.FileExists(*RelativePath))
+	{
+		auto writer = csv::make_csv_writer(ss);
+
+		std::vector<std::string> allKeys;
+		for (const auto& it : m_instanceVarNameToValueStr)
+		{
+			allKeys.push_back(std::string(TCHAR_TO_UTF8(*it.Key)));
+		}
+		
+		writer << allKeys;
+		FFileHelper::SaveStringToFile(FString(ss.str().c_str()), *RelativePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_EvenIfReadOnly);
+	}
+
+	// Save all values to the failing file
+	{
+		auto writer = csv::make_csv_writer(ss);
+
+		std::vector<std::string> allValues;
+		for (const auto& it : m_instanceVarNameToValueStr)
+		{
+			allValues.push_back(std::string(TCHAR_TO_UTF8(*it.Value)));
+		}
+
+		writer << allValues;
+		FFileHelper::SaveStringToFile(FString(ss.str().c_str()), *RelativePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
+	}
+}
 
 #pragma optimize("", on)

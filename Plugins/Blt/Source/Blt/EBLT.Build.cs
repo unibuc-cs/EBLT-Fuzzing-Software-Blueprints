@@ -10,8 +10,8 @@ public class EBLT : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new[]
         {
-            "AIModule"
-        });
+            "AIModule", "CinematicCamera"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new[]
 		{
@@ -19,7 +19,9 @@ public class EBLT : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"Json",
-			"AIModule"
+			"AIModule",
+			"CinematicCamera",
+            "Projects"
 		});
 	}
 }
