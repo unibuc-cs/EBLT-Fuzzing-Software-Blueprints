@@ -179,12 +179,12 @@ void AEBLTTestTemplate::SetTestAnnotations(SingleTestAnnotations* TestAnnotation
 
 	for (auto& var : m_testAnnotations->m_InputVarToAnnotationData)
 	{
-		m_instanceVarNameToValueStr[var.Key] = FString();
+		m_instanceVarNameToValueStr.Add(var.Key, FString(""));
 	}
 
 	for (auto& var : m_testAnnotations->m_OutputVarToAnnotationData)
 	{
-		m_instanceVarNameToValueStr[var.Key] = FString();
+		m_instanceVarNameToValueStr.Add(var.Key, FString(""));
 	}
 }
 
@@ -200,10 +200,10 @@ void AEBLTTestTemplate::OutputTestFailedCase()
 {
 	std::stringstream ss;
 
-	FString Content = IPluginManager::Get().FindPlugin(TEXT("EBLT"))->GetContentDir();
+	FString ContentFolderPath = IPluginManager::Get().FindPlugin(TEXT("EBLT"))->GetContentDir();
 	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
-	const FString RelativePath = TEXT("Outputs/FailedTests/") + GetGivenName() / TEXT(".csv");
+	const FString RelativePath = ContentFolderPath / TEXT("Outputs/FailedTests") / GetGivenName() + TEXT(".csv");
 
 	// Save all keys as header if file not already there
 	if (!FileManager.FileExists(*RelativePath))

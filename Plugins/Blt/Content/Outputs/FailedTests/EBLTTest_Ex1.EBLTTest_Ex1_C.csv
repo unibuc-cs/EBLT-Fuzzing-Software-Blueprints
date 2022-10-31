@@ -1,0 +1,4 @@
+StartLocation,StartRotation,CharacterScale,DestLocation_asEntity,timeToPathLimit
+StartLocation,StartRotation,CharacterScale,DestLocation_asEntity,timeToPathLimit
+X=-2330.000 Y=-1970.000 Z=543.148,X=0.000 Y=-90.000 Z=0.000,1.853218,BP_checkpoint2,30.222727
+X=-1709.233 Y=-1860.210 Z=411.587,X=0.000 Y=-90.000 Z=0.000,1.223975,BP_checkpoint2,30.015282
