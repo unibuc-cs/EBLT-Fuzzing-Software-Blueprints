@@ -1,0 +1,29 @@
+{
+	"EBLTTest_Ex1.CitySamplePerformance": {
+
+		"inputs" : {
+		"CarDensity": "[min=0.0, max=1.0]",
+		"PedestriansDensity":"[min=0.0, max=1.0]",
+        "dayNight": "{day # night}",
+		},
+
+		"expectedOutputs" : {
+			"fps" :
+			{
+				"type" : "continuous-60",
+				"value" : "[min=30,  max=inf]"
+			},
+
+			"memoryFootprint" :
+			{
+				"type" : "continuous-60",
+				"value" : "[min=0,  max=9800]"
+			},
+		},
+
+		"debugOutputs" : {
+			"cameraLocation"
+		}
+	}
+}
+
