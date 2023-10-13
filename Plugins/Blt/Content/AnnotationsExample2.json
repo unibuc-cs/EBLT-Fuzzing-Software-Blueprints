@@ -2,14 +2,15 @@
 	"EBLTTest_Ex1.EBLTTest_Ex1_C": {
 
 		"inputs" : {
-		"CharacterScale": "[min=0.8, max=2]",
-		"sprintSpeed":"{100 # 200 # 300}",
-		"StartLocation": "{(-2330.000000,-1970.000000,543.147949) # (-1709.232910,-1860.210449,411.586578)}",    
-		"StartLocation_": "{min=(-2330.000000,-1970.000000,543.147949),max=(-1709.232910,-1860.210449,411.586578)}",
+		"CharacterScale": "[min=0.8, max=1.5]",
+		"StartLocation": "{(830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000)}",    
+		"StartLocation_": "{(-120.000000,-790.000000,68.000000) # (-850.000000,-1080.000000,368.000000)}",    
+		"StartLocation__": "[min=(-820.000000,-1230.000000,350), max=(830,-120,350)]",
 		"DestLocation_asEntity": "{BP_checkpoint2}",
 		"StartRotation" : "{(0,-90,0), (0,0,0)}",
-        "walkSpeed": "[0, 1500]",
-		"jumpVelocity": "[0, 3000]"	
+        "walkSpeed": "[min=120, max=375]",
+        "sprintSpeed":"{200 # 250 # 400}",
+		"jumpVelocity": "[min=0, max=3000]"	
 		},
 
 		"expectedOutputs" : {
@@ -26,7 +27,45 @@
 				"value" : "[min=0.0, max=3]",
 				"failCode" : "2"
 			}
+		},
+
+		"metadata" : {
+			"numTestInstances" : "[min=10, max=10]"
 		}
+	},
+
+	"EBLTTuning_Ex1.EBLTTuning_Ex1_C": {
+
+			"inputs" : {
+			"CharacterScale": "[min=0.8, max=1.5]",
+			"StartLocation": "{(830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000)}",    
+			"StartLocation_": "{(-120.000000,-790.000000,68.000000) # (-850.000000,-1080.000000,368.000000)}",    
+			"StartLocation__": "[min=(-820.000000,-1230.000000,350), max=(830,-120,350)]",
+			"DestLocation_asEntity": "{BP_checkpoint2}",
+			"StartRotation" : "{(0,-90,0), (0,0,0)}",
+	        "walkSpeed": "[min=120, max=375]",
+	        "sprintSpeed":"{200 # 250 # 400}",
+			"jumpVelocity": "[min=0, max=3000]"	
+			},
+
+			"expectedOutputs" : {
+				"timeToPathLimit" :
+				{
+					"type" : "continuous-60",
+					"value" : "[min=0.0, max=30]",
+					"failCode" : "1"
+				},
+
+				"movingIdleLimit" :
+				{
+					"type" : "continuous-10",
+					"value" : "[min=0.0, max=3]",
+					"failCode" : "2"
+				}
+			},
+
+			"metadata" : {
+				"numTestInstances" : "[min=10, max=10]"
+			}
 	}
 }
-

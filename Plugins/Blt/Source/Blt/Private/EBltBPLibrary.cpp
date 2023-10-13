@@ -19,7 +19,9 @@
 #include "Editor/EditorEngine.h"
 
 
-#pragma optimize("", off)
+PRAGMA_DISABLE_OPTIMIZATION
+
+ACharacter* UEBltBPLibrary::m_lastTestCharacterSpawned = nullptr;
 
 ///////////// DEMO DELETE
 
@@ -107,9 +109,8 @@ bool Annotation_JsonTests::RunTest(FString const& Parameters)
 		TestFalse("Can't find the json specified", false);
 		return true;
 	}
-
-	/// TODO
 #endif
+	/// TODO
 	return true;
 }
 
@@ -124,12 +125,36 @@ AEBLTManager*  UEBltBPLibrary::m_ebltManager = nullptr;
 UClass* UEBltBPLibrary::FindClass(const FString& ClassName, const bool& bExactClass, UObject* const Package)
 {
 	check(*ClassName);
-	UObject* const Outer = Package ? Package : ANY_PACKAGE;
+	UObject* const Outer = Package;// ? Package : ANY_PACKAGE;
 
-	UWorld* world = GetWorldForTests();//Cast<UEditorEngine>(GEngine)->GetEditorWorldContext().World();
+	/*
+	TArray<UClass*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(world, UClass::StaticClass(), FoundActors);
 
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(world, AEBLTTestTemplate::StaticClass(), FoundActors);
+	for (const UClass* act : FoundActors)
+	{
+		FString name = act->GetName();
+		if (name.Contains(TEXT("Ex1")) || name.Contains(TEXT("EBLT")) || name.Contains(TEXT("Tuning")) || name.Contains(TEXT("Test")))
+		{
+			int a = 3;
+			a++;
+		}
+	}
+	*/
+
+	/*
+	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass(TEXT("Class'/Game/Blueprints/MyCustomBP.MyCustomBP_C'"));
+	if (MyBPClass.Object != NULL)
+	{
+		YourBPClass = MyBPClass.Object;
+	}
+	*/
+
+
+
+	if (UClass* const ClassType = FindFirstObjectSafe<UClass>(*ClassName))
+		return ClassType;
+
 	
 	if (UClass* const ClassType = FindObject<UClass>(Outer, *ClassName, bExactClass))
 		return ClassType;
@@ -358,17 +383,22 @@ void UEBltBPLibrary::SolveEBLTManager(UWorld* world)
 }
 
 
-AActor* UEBltBPLibrary::SpawnTestingCharacter(const UObject* const WorldContextObject, const FVector& location, const FRotator& rotation, const double characterScale)
+AActor* UEBltBPLibrary::SpawnTestingCharacter(const UObject* const WorldContextObject, const FVector& location, const FRotator& rotation, const double characterScale, const double walkSpeed, const double sprintSpeed, const double jumpVelocity)
 {
+	ensureMsgf(m_lastTestCharacterSpawned == nullptr, TEXT("A previous character remained spawned !!!"));
+
 	UWorld* world = WorldContextObject->GetWorld();
 	SolveEBLTManager(world);
 
-	const TSubclassOf<AActor> actorClass = FindClass("NPC_EpicCharacter.NPC_EpicCharacter_C");
+	const TSubclassOf<AActor> actorClass = FindClass("NPC_EBLT_TestCharacter.NPC_EBLT_TestCharacter_C");
 
 	FTransform actorTransform(rotation, location, UE::Math::TVector(characterScale, characterScale, characterScale));
 	actorTransform.SetScale3D(UE::Math::TVector(characterScale, characterScale, characterScale));
 
-	ACharacter* actorSpawned = Cast<ACharacter>(world->SpawnActor(actorClass, &actorTransform));
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	ACharacter* actorSpawned = Cast<ACharacter>(world->SpawnActor(actorClass, &actorTransform, SpawnParameters));
 	if (actorSpawned)
 	{
 		actorSpawned->SpawnDefaultController();
@@ -376,10 +406,21 @@ AActor* UEBltBPLibrary::SpawnTestingCharacter(const UObject* const WorldContextO
 
 		UGameplayStatics::GetPlayerController(WorldContextObject, 0)->SetViewTarget(actorSpawned);
 
-		Cast<AAIController>(actorSpawned->GetController())->ReceiveMoveCompleted.AddDynamic(m_ebltManager, &AEBLTManager::OnMoveCompletedEvent);
+
+		AAIController* aiController = Cast<AAIController>(actorSpawned->GetController());
+		aiController->ReceiveMoveCompleted.AddDynamic(m_ebltManager, &AEBLTManager::OnMoveCompletedEvent);
 	}
+
+	m_lastTestCharacterSpawned = actorSpawned;
 	return actorSpawned;
 }
 
+void UEBltBPLibrary::OnEBLTManagerDestroyed()
+{
+	m_lastTestCharacterSpawned = nullptr;
+	m_ebltManager = nullptr;
+}
+
+PRAGMA_ENABLE_OPTIMIZATION
 
 #pragma optimize("", on) 

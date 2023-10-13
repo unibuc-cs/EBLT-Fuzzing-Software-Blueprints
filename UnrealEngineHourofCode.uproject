@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{F2927685-43FB-309B-DFC2-2F899FBB7616}",
+	"EngineAssociation": "{80B27373-4302-B549-2986-EA8D9E080338}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -62,6 +62,10 @@
 		},
 		{
 			"Name": "FbxAutomationTestBuilder",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayBehaviors",
 			"Enabled": true
 		}
 	]

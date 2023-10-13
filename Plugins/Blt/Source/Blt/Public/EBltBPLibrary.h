@@ -10,6 +10,7 @@
 
 class FJsonValue;
 class AEBLTManager;
+class ACharacter;
 
 // Gets the UWorld for tests
 static UWorld* GetWorldForTests()
@@ -51,7 +52,7 @@ public:
 
 	// Gets the character to test in the world
 	UFUNCTION(BlueprintCallable, Category = "EBLT/Utilities", meta = (WorldContext = "WorldContextObject"))
-	static AActor* SpawnTestingCharacter(const UObject* const WorldContextObject, const FVector& location, const FRotator& rotation, const double characterScale);
+	static AActor* SpawnTestingCharacter(const UObject* const WorldContextObject, const FVector& location, const FRotator& rotation, const double characterScale, const double walkSpeed, const double sprintSpeed, const double jumpVelocity);
 	
 	static void ApplyFuzzing(
 		const UObject* const WorldContextObject,
@@ -98,8 +99,14 @@ public:
 	);
 
 
+	static void OnEBLTManagerDestroyed();
+
 protected:
+
+	friend AEBLTManager;
 
 	static void SolveEBLTManager(UWorld* world);
 	static AEBLTManager* m_ebltManager;
+
+	static ACharacter* m_lastTestCharacterSpawned;
 };

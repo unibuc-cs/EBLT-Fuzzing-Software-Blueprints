@@ -60,6 +60,8 @@ public:
 	// Each failed test will be on a row
 	void OutputTestFailedCase();
 
+	void OutputTestSuccedTuningCase();
+
 
 	void SetGivenName(const FString& name) { m_givenName = name; }
 	const FString& GetGivenName() const { return m_givenName; }
@@ -68,6 +70,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+
+	void OnTestFilureRecoveryElapsed();
+
 public:	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "TestInterns")
@@ -75,6 +80,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "TestInterns")
 	EBLTTestStatus m_EBLTTestStatus = EBLTTestStatus::EBLTTest_NotSetup;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TestInterns")
+	EBLTType m_EBLTType = EBLTType::EBLT_FuzzForTesting;
 
 private:
 	SingleTestAnnotations* m_testAnnotations = nullptr;

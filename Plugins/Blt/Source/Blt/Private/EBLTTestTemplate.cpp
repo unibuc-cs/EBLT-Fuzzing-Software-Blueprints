@@ -9,7 +9,7 @@
 #include "csv.hpp"
 #include "Interfaces/IPluginManager.h"
 
-#pragma optimize("", off)
+PRAGMA_DISABLE_OPTIMIZATION
 
 // Sets default values
 AEBLTTestTemplate::AEBLTTestTemplate()
@@ -35,6 +35,7 @@ void AEBLTTestTemplate::Internal_SetupContext()
 
 	// TODO: get the result of the function and check properly with manager 
 	const bool res = SetupContext();
+	ensureMsgf(res == true, TEXT("COULD NOT RUN THE SETUP ON THE BLUEPRINT SIDE !!!"));
 	UE_LOG(LogTemp, Warning, TEXT("Test run setup is: %d"), (int)res);
 	if (!res)
 	{
@@ -52,6 +53,14 @@ void AEBLTTestTemplate::Tick(float DeltaTime)
 
 	EBLTTestStatus prevTestStatus = m_EBLTTestStatus;
 
+	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_WaitingForFailureRecovery)
+	{
+		return;
+	}
+	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_FailureRecovered)
+	{
+		m_EBLTTestStatus = EBLTTestStatus::EBLTTest_Failed;
+	}
 
 	// Step 0 : Check proper action against current state
 	if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_NotSetup)
@@ -62,6 +71,24 @@ void AEBLTTestTemplate::Tick(float DeltaTime)
 	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_NotRunning)
 	{
 		CheckTriggers();
+
+		// Test may file right after checking the triggers too.
+		if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Failed)
+		{
+			//UKismetSystemLibrary::Delay(GetWorld(), 10.0f, FLatentActionInfo());
+
+			m_EBLTTestStatus = EBLTTestStatus::EBLTTest_WaitingForFailureRecovery;
+
+			FTimerHandle UnusedHandle;
+			GetWorldTimerManager().SetTimer(
+				UnusedHandle, this, &AEBLTTestTemplate::OnTestFilureRecoveryElapsed, 10.0f, false);
+
+			APlayerController* const MyPlayer = Cast<APlayerController>(GEngine->GetFirstLocalPlayerController((GetWorld())));
+			if (MyPlayer != nullptr)
+			{
+				//MyPlayer->SetPause(true);
+			}
+		}
 	}
 	else if (m_EBLTTestStatus == EBLTTestStatus::EBLTTest_Failed)
 	{
@@ -106,6 +133,11 @@ void AEBLTTestTemplate::Internal_OnTestFinished()
 	}
 
 	m_ebltManager->OnTestFinished(this, m_EBLTTestStatus);
+}
+
+void AEBLTTestTemplate::OnTestFilureRecoveryElapsed()
+{
+	m_EBLTTestStatus = EBLTTestStatus::EBLTTest_FailureRecovered;
 }
 
 
@@ -235,4 +267,43 @@ void AEBLTTestTemplate::OutputTestFailedCase()
 	}
 }
 
-#pragma optimize("", on)
+void AEBLTTestTemplate::OutputTestSuccedTuningCase()
+{
+	std::stringstream ss;
+
+	FString ContentFolderPath = IPluginManager::Get().FindPlugin(TEXT("EBLT"))->GetContentDir();
+	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
+
+	const FString RelativePath = ContentFolderPath / TEXT("Outputs/Tuning") / GetGivenName() + TEXT(".csv");
+
+	// Save all keys as header if file not already there
+	if (!FileManager.FileExists(*RelativePath))
+	{
+		auto writer = csv::make_csv_writer(ss);
+
+		std::vector<std::string> allKeys;
+		for (const auto& it : m_instanceVarNameToValueStr)
+		{
+			allKeys.push_back(std::string(TCHAR_TO_UTF8(*it.Key)));
+		}
+
+		writer << allKeys;
+		FFileHelper::SaveStringToFile(FString(ss.str().c_str()), *RelativePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_EvenIfReadOnly);
+	}
+
+	// Save all values to the output file
+	{
+		auto writer = csv::make_csv_writer(ss);
+
+		std::vector<std::string> allValues;
+		for (const auto& it : m_instanceVarNameToValueStr)
+		{
+			allValues.push_back(std::string(TCHAR_TO_UTF8(*it.Value)));
+		}
+
+		writer << allValues;
+		FFileHelper::SaveStringToFile(FString(ss.str().c_str()), *RelativePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
+	}
+}
+
+PRAGMA_ENABLE_OPTIMIZATION

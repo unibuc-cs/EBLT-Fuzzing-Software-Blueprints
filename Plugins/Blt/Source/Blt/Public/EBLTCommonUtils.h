@@ -17,8 +17,18 @@ enum class EBLTTestStatus : uint8 // \describes the lifecycle of a blueprint tes
 	EBLTTest_NotRunning, // Can now check triggers
 	EBLTTest_InProgress, // Test iis in progress
 	EBLTTest_Failed,  // Test is finished with either failed or success
+	EBLTTest_WaitingForFailureRecovery,
+	EBLTTest_FailureRecovered,
 	EBLTTest_Success,
 };
+
+UENUM(BlueprintType)
+enum class EBLTType : uint8 // \describes the type: testing with fuzz or tuning 
+{
+	EBLT_FuzzForTesting,
+	EBLT_FuzzForTuning,
+};
+
 
 
 class EBLTCommonUtils
@@ -32,7 +42,7 @@ public:
 		case EBLTTestStatus::EBLTTest_Success:
 			return TEXT("TestSucceeded");
 		default:
-			return TEXT("TextFailed");
+			return TEXT("TestFailed");
 		}
 	}
 

@@ -98,7 +98,7 @@ FVector3f VarAnnotation_Vector::generateRandomValue() const
 	else
 	{
 		const float interpFactor = ((float)rand() / (RAND_MAX));
-		const FVector3f res = FMath::Lerp(m_minVal, m_maxVal, res);
+		const FVector3f res = FMath::Lerp(m_minVal, m_maxVal, interpFactor);
 
 		return res;
 	}
@@ -172,14 +172,14 @@ AActor* VarAnnotation_Entity::readSingleValue(std::string& singleValueStr)
 class VariableAnnotationFactory
 {
 public:
-	static IGenericVarAnnotation* CreateFromJsonValue(const FJsonValue* const jsonVarSpec, const FProperty* const targetProperty, bool isInputVar)
+	static IGenericVarAnnotation* CreateFromJsonValue(const FJsonValue* const jsonVarSpec, const FProperty* const targetProperty, bool isInputVar, bool isMetaVar)
 	{
 		IGenericVarAnnotation* res = nullptr;
 
 		// TODO: need more work to add support from the other pieces of code here for reusability
 		std::string jsonValueSpecStr, jsonValueSpecType, failCodeStr, succeedCodeStr;
 
-		if (isInputVar)
+		if (isInputVar || isMetaVar)
 		{
 			ensureMsgf(jsonVarSpec->Type == EJson::String, TEXT("This function supports for now just these types"));
 			jsonValueSpecStr = std::string(TCHAR_TO_UTF8(*jsonVarSpec->AsString()));
@@ -206,7 +206,8 @@ public:
 		}
 
 		// Is Float / Int ?
-		if (CastField<FNumericProperty>(targetProperty))
+		if (CastField<FNumericProperty>(targetProperty) 
+			|| CastField<FFloatProperty>(targetProperty) || CastField<FDoubleProperty>(targetProperty) || CastField<FIntProperty>(targetProperty))
 		{
 			if (CastField<FFloatProperty>(targetProperty) || CastField<FDoubleProperty>(targetProperty))
 			{
@@ -244,7 +245,7 @@ public:
 		// Process the output var specs
 		int sampleRate = -1;
 		VariableCheckType checkType = VariableCheckType::VARCHECK_AT_END_ONLY;
-		if (!isInputVar)
+		if (!isInputVar && !isMetaVar)
 		{
 			if (jsonValueSpecType == "end")
 			{
@@ -308,31 +309,35 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 			continue;
 		}
 
-		const FString keys[2] = { "inputs", "expectedOutputs" };
-		for (int keyIndex = 0; keyIndex < 2; keyIndex++)
+		const FString keys[3] = { "inputs", "expectedOutputs", "metadata"};
+		for (int keyIndex = 0; keyIndex < 3; keyIndex++)
 		{
 			const bool isInputVar = keyIndex == 0;
+			const bool isOutputVar = keyIndex == 1;
+			const bool isMetaVar = keyIndex == 2;
 			if (!BlueprintToTestSpec->Get()->Values.Contains(keys[keyIndex]))
 				continue;
 
 
-			const TSharedPtr<FJsonObject>* BlueprintToTestPropertiesSpec;
-			BlueprintToTestSpec->Get()->Values.Find(keys[keyIndex])->Get()->TryGetObject(BlueprintToTestPropertiesSpec);
-
+			const TSharedPtr<FJsonObject>* BlueprintToTestPropertiesSpec = nullptr;
+			auto* jsonObj = BlueprintToTestSpec->Get()->Values.Find(keys[keyIndex])->Get();
+			jsonObj->TryGetObject(BlueprintToTestPropertiesSpec);
 
 			for (TFieldIterator<FProperty> Iterator(BlueprintToTestClassType); Iterator; ++Iterator)
 			{
 				const FProperty* const Property = *Iterator;
 				const FString& PropertyName = Property->GetNameCPP();
 
+				FJsonValue* PropertyValue = nullptr;
+				
 				if (!BlueprintToTestPropertiesSpec->Get()->Values.Contains(PropertyName))
 				{
 					continue;
 				}
 
-				const FJsonValue* const PropertyValue = BlueprintToTestPropertiesSpec->Get()->Values.Find(PropertyName)->Get();
+				PropertyValue = BlueprintToTestPropertiesSpec->Get()->Values.Find(PropertyName)->Get();
 
-				IGenericVarAnnotation* varAnnotationData = VariableAnnotationFactory::CreateFromJsonValue(PropertyValue, Property, isInputVar);
+				IGenericVarAnnotation* varAnnotationData = VariableAnnotationFactory::CreateFromJsonValue(PropertyValue, Property, isInputVar, isMetaVar);
 				if (varAnnotationData == nullptr)
 				{
 					ensureMsgf(false, TEXT("Invalid data"));
@@ -344,9 +349,18 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 				{
 					testDef.m_InputVarToAnnotationData.Add(PropertyName, varAnnotationData);
 				}
-				else
+				else if (isOutputVar)
 				{
 					testDef.m_OutputVarToAnnotationData.Add(PropertyName, varAnnotationData);
+				}
+				else if (isMetaVar)
+				{
+					ensureMsgf(varAnnotationData->GetTestVariableType() == TestVariableType::TEST_VAR_INTEGER, TEXT("Not the right type, must be int"));
+					testDef.m_numInstancesToRun = ((VarAnnotation_Int*)varAnnotationData)->generateRandomValue();
+				}
+				else
+				{
+					ensure(false);
 				}
 			}
 		}
@@ -368,6 +382,7 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 	return true;
 }
 
+// Performing fuzzing based on the provided augmentation
 bool TestsAnnotationsHelper::BuildTestInstance(const UWorld* worldContext,
 												const TestParamsSuggestionStrategy strategy, 
 												AActor* targetTestActor, 

@@ -7,13 +7,36 @@
 #include "EBltBPLibrary.h"
 #include "EBLTTestTemplate.h"
 
-#pragma optimize("", off)
+PRAGMA_DISABLE_OPTIMIZATION
 
 // Sets default values
 AEBLTManager::AEBLTManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	/*
+	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass(TEXT("Class'/Game/Navigation/NPC_EBLT_TestCharacter.NPC_EBLT_TestCharacter_C'"));
+	if (MyBPClass.Object != NULL)
+	{
+		int a = 3;
+		a++;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass2(TEXT("Class'/EBLT/EBLTTuning_Ex1.EBLTTuning_Ex1_C'"));
+	if (MyBPClass2.Object != NULL)
+	{
+		int a = 3;
+		a++;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass3(TEXT("Class'/EBLT/EBLTManager_BP.EBLTManager_BP_C'"));
+	if (MyBPClass3.Object != NULL)
+	{
+		int a = 3;
+		a++;
+	}
+	*/
 }
  
 // Called when the game starts or when spawned
@@ -22,6 +45,16 @@ void AEBLTManager::BeginPlay()
 	Super::BeginPlay();
 
 	InitTestsSuite();
+}
+
+void AEBLTManager::Destroyed()
+{
+	UEBltBPLibrary::OnEBLTManagerDestroyed();
+}
+
+void AEBLTManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UEBltBPLibrary::OnEBLTManagerDestroyed();
 }
  
 // Called every frame
@@ -52,21 +85,52 @@ void AEBLTManager::RunTestSuite()
 	ensureMsgf(m_currentlyRunningTests.IsEmpty(), TEXT("You are currently trying to run a new test suite but existing one is in progres !!!!"));
 
 	// Step 0: get a set of tests to select and the strategy used for fuzzing input variables
-	TArray<FString> selectedTests;
-	TestParamsSuggestionStrategy testStrategy = TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM;
-	GetTestsToRun(selectedTests, testStrategy);
+	m_state_SelectedTests.Reset();
+	m_state_testStrategy = TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM;
+	GetTestsToRun(m_state_SelectedTests, m_state_testStrategy);
 
-	// For each selected test set an instance with parameter and run it
-	for (const FString& selectedTestName : selectedTests)
+	if (m_state_SelectedTests.Num() > 0)
 	{
-		const SingleTestAnnotations& testSpecs = m_testNamesToAnnotations[selectedTestName];
+		m_nextTestToRun_TestIndex_And_InstanceIndex.Key = 0;
+		m_nextTestToRun_TestIndex_And_InstanceIndex.Value = -1;
 
-		TestsAnnotationsHelper::BuildTestInstance(GetWorld(), testStrategy, testSpecs.m_spawnedTestActorForTest, testSpecs);
-		m_currentlyRunningTests.Add(CastChecked<AEBLTTestTemplate>(testSpecs.m_spawnedTestActorForTest));
+		const bool hasNextTest = internal_getNextTestToRun();
+
+		if (hasNextTest)
+		{
+			m_state = EBLTManagerState::EBLT_RunningSuite;
+		}
+	}
+}
+
+bool AEBLTManager::internal_getNextTestToRun()
+{
+	ensure(m_nextTestToRun_TestIndex_And_InstanceIndex.Key >= 0 && m_nextTestToRun_TestIndex_And_InstanceIndex.Key < m_state_SelectedTests.Num());
+	
+	// Increase the instance index
+	m_nextTestToRun_TestIndex_And_InstanceIndex.Value++;
+
+	// If at the end for the current test, go to next test
+	if (m_testNamesToAnnotations[m_state_SelectedTests[m_nextTestToRun_TestIndex_And_InstanceIndex.Key]].m_numInstancesToRun <= m_nextTestToRun_TestIndex_And_InstanceIndex.Value)
+	{
+		m_nextTestToRun_TestIndex_And_InstanceIndex.Key++;
+
+		if (m_nextTestToRun_TestIndex_And_InstanceIndex.Key >= m_state_SelectedTests.Num())
+		{
+			// Finished
+			return false;
+		}
+
+		// Init to the first instance !
+		m_nextTestToRun_TestIndex_And_InstanceIndex.Value = 0; 
 	}
 
+	// For each selected test set an instance with parameter and run it
+	const SingleTestAnnotations& testSpecs = m_testNamesToAnnotations[m_state_SelectedTests[m_nextTestToRun_TestIndex_And_InstanceIndex.Key]];
+	TestsAnnotationsHelper::BuildTestInstance(GetWorld(), m_state_testStrategy, testSpecs.m_spawnedTestActorForTest, testSpecs);
+	m_currentlyRunningTests.Add(CastChecked<AEBLTTestTemplate>(testSpecs.m_spawnedTestActorForTest));
 
-	m_state = EBLTManagerState::EBLT_RunningSuite;
+	return true;
 }
 
 // Init all tests basically
@@ -85,6 +149,7 @@ void AEBLTManager::InitTestsSuite()
 		const FString& testName = testData.Key;
 		SingleTestAnnotations& testSpecs = testData.Value;
 
+		// Spawn a test instance based on provided blueprint
 		AActor* testActor = GetWorld()->SpawnActor(testSpecs.m_classToTest);
 		ensureMsgf(testActor, TEXT("couldnt spawn the testing actor"));
 		testSpecs.m_spawnedTestActorForTest = testActor;
@@ -105,6 +170,7 @@ void AEBLTManager::GetTestsToRun(TArray<FString>& outTestsToRun, TestParamsSugge
 	for (const auto& it : m_testNamesToAnnotations)
 	{
 		outTestsToRun.Add(it.Key);
+		outTestsToRun.Add(it.Key);
 	}
 
 	// 4: get a strategy and simulator instance to use too !
@@ -114,28 +180,70 @@ void AEBLTManager::GetTestsToRun(TArray<FString>& outTestsToRun, TestParamsSugge
 void AEBLTManager::OnTestFinished(AEBLTTestTemplate* testWhoFinished, const EBLTTestStatus finishedStatus)
 {
 	ensure(finishedStatus == EBLTTestStatus::EBLTTest_Success || finishedStatus == EBLTTestStatus::EBLTTest_Failed);
-	UE_LOG(LogBlt, Warning, TEXT(" ## Test %s was finished with code %s"), *testWhoFinished->GetGivenName(), EBLTCommonUtils::EnumToString(finishedStatus));
+	UE_LOG(LogBlt, Warning, TEXT(" ## Test %s, instance %d, was finished with code %s"), *testWhoFinished->GetGivenName(), m_nextTestToRun_TestIndex_And_InstanceIndex.Value, EBLTCommonUtils::EnumToString(finishedStatus));
 
-	if (finishedStatus == EBLTTestStatus::EBLTTest_Failed)
+	const bool isTesting = testWhoFinished->m_EBLTType == EBLTType::EBLT_FuzzForTesting;
+
+	if (GEngine)
 	{
-		testWhoFinished->OutputTestFailedCase();
+		FColor colorForDebugText = (finishedStatus == EBLTTestStatus::EBLTTest_Success ? FColor::Green : FColor::Red);
+		if (!isTesting)
+		{
+			if (colorForDebugText == FColor::Green)
+				colorForDebugText = FColor::Red;
+			else
+				colorForDebugText = FColor::Green;
+		}
+
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1000, colorForDebugText, FString::Printf(TEXT(" ## Test %s, instance %d,  was finished - %s.%s"),
+			*testWhoFinished->GetGivenName(),
+			m_nextTestToRun_TestIndex_And_InstanceIndex.Value,
+			EBLTCommonUtils::EnumToString(finishedStatus), 
+			finishedStatus == EBLTTestStatus::EBLTTest_Failed ? TEXT("See output logs folder!") : TEXT("")),
+			true);
+	}
+
+	// When testing, output incorrect test cases. When tuning, output correct test cases
+	if (isTesting)
+	{
+		if (finishedStatus == EBLTTestStatus::EBLTTest_Failed)
+		{
+			testWhoFinished->OutputTestFailedCase();
+		}
+	}
+	else
+	{
+		if (finishedStatus == EBLTTestStatus::EBLTTest_Success)
+		{
+			testWhoFinished->OutputTestSuccedTuningCase();
+		}
 	}
 
 	// Remove the test actor from the set of running and destroy it
 	m_currentlyRunningTests.Remove(testWhoFinished);
-	testWhoFinished->Destroy();
 
+#if 0
+	testWhoFinished->Destroy();
+#endif
+
+	UEBltBPLibrary::m_lastTestCharacterSpawned->K2_DestroyActor();
+	UEBltBPLibrary::m_lastTestCharacterSpawned = nullptr;
 
 	// If currently running tests is emtpy move back to idle
 	if (m_currentlyRunningTests.Num() == 0)
 	{
-		if (m_continuousTestRunning)
+		const bool hasNextTest = internal_getNextTestToRun();
+
+		if (!hasNextTest)
 		{
-			m_state = EBLTManagerState::EBLT_Idle;
+			if (m_continuousTestRunning)
+			{
+				m_state = EBLTManagerState::EBLT_Idle;
+			}
 		}
 	}
-	
+
 }
 
 
-#pragma optimize("", on)
+PRAGMA_ENABLE_OPTIMIZATION

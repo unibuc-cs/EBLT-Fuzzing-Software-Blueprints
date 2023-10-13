@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "Engine/EngineTypes.h"
 #include "EBLTCommonUtils.h"
 #include "EBLTManager.generated.h"
 
@@ -48,6 +49,10 @@ protected:
 
 	MapFromTestNameToAnnotations m_testNamesToAnnotations;
 
+	virtual void Destroyed() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -76,10 +81,25 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (RelativePath))
 	TArray<UBlueprintGeneratedClass*> AllowedTestInstances;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Triggers")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Triggers")
 	bool m_continuousTestRunning = false;
 
+	// Current state for running the tests
 	EBLTManagerState m_state = EBLTManagerState::EBLT_Idle;
+
+	// The next state index and instance index to run tests on
+	TPair<int, int> m_nextTestToRun_TestIndex_And_InstanceIndex = TPairInitializer(-1, -1);
+
+	// Currently buit and configured tests 
 	TSet<AEBLTTestTemplate*> m_currentlyRunningTests;
 
+	// Currently selected tests under the current run
+	TArray<FString> m_state_SelectedTests;	
+
+	// Current test strategy type
+	TestParamsSuggestionStrategy m_state_testStrategy = TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM;
+
+protected:
+	// REturns true if any left, false otherwise, like an iterator
+	bool internal_getNextTestToRun();
 };

@@ -8,7 +8,7 @@
 #include "UObject/Object.h"
 #include "HAL/Platform.h"
 
-#pragma optimize("", off)
+PRAGMA_DISABLE_OPTIMIZATION
 
 class AActor;
 
@@ -243,6 +243,7 @@ public:
 	UClass* m_classToTest = nullptr;
 	TMap<FString, IGenericVarAnnotation*> m_InputVarToAnnotationData;
 	TMap<FString, IGenericVarAnnotation*> m_OutputVarToAnnotationData;
+	int m_numInstancesToRun = 0; // How many instances to run the test on 
 };
 
 using MapFromTestNameToAnnotations = TMap<FString, SingleTestAnnotations>;
@@ -254,10 +255,11 @@ public:
 	static bool ParseTestsAnnotationsFromJSon(const FString& FilePath, MapFromTestNameToAnnotations& outTestsAndAnnotations);
 
 	// Gets the properties and puts them in the target actor from a given strategy
+	// Performing fuzzing based on the provided augmentation
 	static bool BuildTestInstance(const UWorld* worldContext, const TestParamsSuggestionStrategy strategy, AActor* targetTestActor, const SingleTestAnnotations& testAnnotations);
 
 private:
 
 };
 
-#pragma optimize("", on)
+PRAGMA_ENABLE_OPTIMIZATION
