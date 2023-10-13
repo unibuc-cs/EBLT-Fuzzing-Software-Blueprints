@@ -4,6 +4,7 @@
 
 Developed with Unreal Engine 5.1.1, but should be compatible with newer versions like Unreal Engine 5.3 (RARES CONFIRM). 
 Check the documentation folder for the technical paper presented and won best paper award at ICSOFT + RARES ADD PLEASE
+RARES adauga tu te rog si optiunea aia cu continuous run e important totusi cred
 
 ## Setup notes
 
