@@ -5,6 +5,8 @@
 
 Developed with Unreal Engine 5.1.1, but should be compatible with newer versions like Unreal Engine 5.3. The assets used for defininig the level are based on the HoursOfCode learning tutorial from Epic marketplace, publicly available for learning purposes. To satisfy our evaluation objectives, we highly modified the level, some rules and placed new objects in different positions.
 
+The video demonstration is available here: https://www.youtube.com/watch?v=O9kz6DQse80&t=1s&ab_channel=PaduraruCiprian 
+
 Make sure to check the documentation folder https://github.com/AGAPIA/EBLT/tree/master/Documentation for the full technical paper (that best paper award at ICSOFT 2023 https://icsoft.scitevents.org/PreviousAwards.aspx),  presentation slides, and Video demo with explanations.
 
 ## Quick Evaluation
@@ -92,6 +94,7 @@ The tests are defined with the BDD methodology in mind. https://en.wikipedia.org
 
 To properly cite our work:
 
+````
 @inproceedings{DBLP:conf/icsoft/PaduraruCS23a,
   author       = {Ciprian Paduraru and
                   Rares Cristea and
@@ -112,4 +115,4 @@ To properly cite our work:
   biburl       = {https://dblp.org/rec/conf/icsoft/PaduraruCS23a.bib},
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
-
+````
