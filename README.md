@@ -3,9 +3,12 @@
 [![MIT License](https://img.shields.io/github/license/bUsernameIsUnavailable/BLT?style=for-the-badge)](https://github.com/bUsernameIsUnavailable/BLT/blob/master/LICENSE.md)
 
 
-Developed with Unreal Engine 5.1.1, but should be compatible with newer versions like Unreal Engine 5.3. The assets used for defininig the level are based on the HoursOfCode learning tutorial from Epic marketplace, publicly available for learning purposes. To satisfy our evaluation objectives, we highly modified the level, some rules and placed new objects in different positions.
+Developed with Unreal Engine 5.1.1, but should be compatible with newer versions like Unreal Engine 5.3. The assets used for defining the level are based on the HoursOfCode learning tutorial from Epic marketplace, publicly available for learning purposes. To satisfy our evaluation objectives, we highly modified the level, and some rules and placed new objects in different positions.
 
-The video demonstration is available here: https://www.youtube.com/watch?v=O9kz6DQse80&t=1s&ab_channel=PaduraruCiprian 
+The video demonstration is available here:
+
+[![Video demo](https://img.youtube.com/vi/O9kz6DQse80/maxresdefault.jpg)](https://www.youtube.com/watch?v=O9kz6DQse80)
+
 
 Make sure to check the documentation folder https://github.com/AGAPIA/EBLT/tree/master/Documentation for the full technical paper (that best paper award at ICSOFT 2023 https://icsoft.scitevents.org/PreviousAwards.aspx),  presentation slides, and Video demo with explanations.
 
@@ -46,7 +49,7 @@ While running the tests you will see a bunch of output logs on the screen for ea
 ## Setup notes - Checking and contributing to the plugin and its capabilities in source code and engine.
 
 
-### Trying the demo level and plugin in editor
+### Trying the demo level and plugin in the editor
 1. Install the Engine from here https://www.unrealengine.com/en-US/unreal-engine-5 
 2. Clone or download the repository
 3. Then, you can click the Launch Game option to test it, or generate a solution and contribute to the project!
@@ -58,7 +61,7 @@ While running the tests you will see a bunch of output logs on the screen for ea
 
 ### Trying the plugin only in your own project
 
-For trying the plugin in your own project:
+To try the plugin in your own project:
 1. Copy the content of the plugin only, https://github.com/AGAPIA/EBLT/tree/master/Plugins/Blt, to your project's Plugins directory.
 2. Open the editor of your project
 3. Go to Edit/Plugins and search for EBLT
@@ -66,7 +69,7 @@ For trying the plugin in your own project:
 
 ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_pluginconfig.png?raw=true)  
 
-### Tests, annotations and setup for your own project
+### Tests, annotations, and setup for your own project
 
 First, drag the EBLTManager component to the world, doesn't matter the position or anything:
 
@@ -77,18 +80,18 @@ First, drag the EBLTManager component to the world, doesn't matter the position 
 The tests are defined with the BDD methodology in mind. https://en.wikipedia.org/wiki/Behavior-driven_development 
 1. Derive a blueprint from EBLTTestTemplate (see full paper for details about this custom plugin class)
 
-2. Set the type of the purpose case, i.e., TEST or TUNE, then make an annotation file similar to the one in Annotations2.json with a correspondence to a variable in the blueprint definition of the test as shown in the picture below. This is basically the test running in the demo and annotation given as example.
+2. Set the type of the purpose case, i.e., TEST or TUNE, then make an annotation file similar to the one in Annotations2.json with a correspondence to a variable in the blueprint definition of the test as shown in the picture below. This is basically the test running in the demo and annotation given as an example.
 ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_level_testSetup_fuzzingTest.png?raw=true)
 
-3. Define your own GIVEN, WHEN, THEN clauses according to the BDD methodology in a graphical blueprints format. As shown in the picture (our example in the demo) below the correspondencies are the following: GIVEN - SetupContext, WHEN - CheckTriggers, THEN - CheckTestCorrectness.
+3. Define your own GIVEN, WHEN, and THEN clauses according to the BDD methodology in a graphical blueprint format. As shown in the picture (our example in the demo) below the correspondencies are the following: GIVEN - SetupContext, WHEN - CheckTriggers, THEN - CheckTestCorrectness.
 
 ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_bdt.png?raw=true)
 
-4. Register your new test to the manager, by adding them to the Allowed Test Instances array. Check in the picture below how we register the two cases, test and tune examples. Remember that the number of instance running consecutively for the same task is defined in the annotations file in the numInstances variable.
+4. Register your new test to the manager, by adding them to the Allowed Test Instances array. Check in the picture below how we register the two cases, test, and tune examples. Remember that the number of instances running consecutively for the same task is defined in the annotations file in the numInstances variable.
 
 ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_tests_to_manager.png?raw=true)
 
-5. To restart the testing and/or tuning specified tasks and run continuously until forever (or until there is a technical problem..), just enable the variable M Continuous Test Running show in the figure above, below the Allowed Test  Instances array.
+5. To restart the testing and/or tuning specified tasks and run continuously forever (or until there is a technical problem..), just enable the variable M Continuous Test Running shown in the figure above, below the Allowed Test  Instances array.
 
 ## Remember to give us feedback and can't wait for your contributions.
 
