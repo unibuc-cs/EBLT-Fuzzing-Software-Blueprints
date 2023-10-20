@@ -1,4 +1,0 @@
-
-Our proposal is to use automated fuzzing processes in video games for two main purposes: (a) Perform automatic tests generation driven by new modifications made by artists/animators/designers/software engineers
-(b) Help designers/artists in tuning different parameters at gameplay time quicker than before. Attached you can find our full motivation plan and high-level methods that could help the game industry in cutting
-the costs of testing, designing, and gameplay parameters evaluation processes. We also provide open-source code and demo movies to sustain our strategies.
