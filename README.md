@@ -12,13 +12,18 @@ RARES adauga tu te rog si optiunea aia cu continuous run e important totusi cred
 For trying a release version to see the overall production capabilities of our framework, download from the following link https://drive.google.com/file/d/19W-9tCOzcUm1-E2kU0sTdBUHnyyniQoi/view?usp=sharing, unzip then run the executable in the folder.
 
 The tests that run by default are in the annotation file in![alt text](https://github.com/AGAPIA/EBLT/blob/master/Plugins/Blt/Content/AnnotationsExample2.json?raw=true). 
-If you open the file you note that there are two case in there, a TEST and a TUNE case.  A snapshot for TEST from the file mentioned above is given in the picture below. ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/AnnotationsFile2.png?raw=true)
+If you open the file you note that there are two case in there, a TEST and a TUNE case.  A snapshot for TEST from the file mentioned above is given in the picture below. ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/AnnotationsFile2.png?raw=true).
+The concrete use-case of this definition is a general-purpose pathfinding system, trying to start from different positions and getting to a marked location in the level.
+
 Each has different ranges and sets to control the following variables:
  - A set of spawn positions (Sp)
  - A range of scales for the character (Sc)
  - A range of maximum speeds for the main character (Rs)
  - A range of jumping velocities (Jv)
- - A set of variables defining test case acceptance (e.g., getting to the destination in less than 30 seconds).
+ - A set of variables defining test case acceptance
+        - E.g., getting to the destination in less than 30 seconds: timeToPathLimit.
+        - E.g., the maximum limit of time for allowing character to not move from its place (detecting blocked characters): movingIdleLimit.
+ - The minimum number of times to run each individual case (numInstances) for sampling in the fuzzing process (numInstances)
 
  Given this, the range of values that can be chosed by the fuzzer is: TotalRangeSize = |Sp| x |Sc| x |Rs| x |Jv|. 
  * From the viewpoint of the TEST case, this total range of values should be correct. The fuzzer will try then to find samples of values that do not satisfy the correctness of the test.
