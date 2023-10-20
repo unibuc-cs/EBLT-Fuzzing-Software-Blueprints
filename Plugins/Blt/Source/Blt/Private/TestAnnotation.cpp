@@ -11,6 +11,7 @@
 #include "EBLTTestTemplate.h"
 #include "EngineUtils.h"
 #include "csv.hpp"
+#include "EBLTManager.h"
 
 #include "Containers/StringConv.h"
 #include "Kismet/GameplayStatics.h"
@@ -137,7 +138,7 @@ AActor* VarAnnotation_Entity::generateRandomValue() const
 
 AActor* VarAnnotation_Entity::readSingleValue(std::string& singleValueStr)
 {
-	UWorld* world = GetWorldForTests();
+	UWorld* world = UEBltBPLibrary::GetWorldForTests();
 	IVarAnnotation::readSingleValue(singleValueStr);
 
 	//char buff_out[256];
@@ -276,11 +277,33 @@ public:
 	}
 };
 
+std::wstring ExePath() {
+	TCHAR buffer[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+	return std::wstring(buffer).substr(0, pos);
+}
+
+
 bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePath, MapFromTestNameToAnnotations& outTestsAndAnnotations)
 {
 	FString AbsoluteFilePath;
+
+	
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
 	if (!EBLTCommonUtils::GetAbsolutePath(FilePath, AbsoluteFilePath))
-		return false;
+	{
+		// Try from current folder if failed from absolute
+		AbsoluteFilePath = "C:/Tests/"+FilePath; 
+
+		if (!PlatformFile.FileExists(*AbsoluteFilePath))
+		{
+			UE_LOG(LogBlt, Error, TEXT("Even the failback path to json file %s does not exist"), *AbsoluteFilePath);
+			ensureMsgf(false, TEXT("Could not find path to annotations json %s"), *AbsoluteFilePath);
+			return false;
+		}
+	}
 
 	FString JsonRaw;
 	FFileHelper::LoadFileToString(JsonRaw, *AbsoluteFilePath);
@@ -288,6 +311,8 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 	if (!FJsonSerializer::Deserialize<TCHAR>(TJsonReaderFactory<TCHAR>::Create(JsonRaw), JsonParsed))
 	{
 		UE_LOG(LogBlt, Error, TEXT("Could not deserialize %s [check if file is JSON]"), *AbsoluteFilePath);
+
+		ensureMsgf(false, TEXT("Could not deserialize %s [check if file is JSON]"), *AbsoluteFilePath);
 		return false;
 	}
 
@@ -297,7 +322,9 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 		const FString& ActorClassName = BlueprintToTestClassDef.Key;
 		UClass* const BlueprintToTestClassType = UEBltBPLibrary::FindClass(ActorClassName);
 		if (!BlueprintToTestClassType)
+		{
 			continue;
+		}
 
 		SingleTestAnnotations testDef;
 		testDef.m_classToTest = BlueprintToTestClassType;
@@ -306,6 +333,7 @@ bool TestsAnnotationsHelper::ParseTestsAnnotationsFromJSon(const FString& FilePa
 		if (!BlueprintToTestClassDef.Value->TryGetObject(BlueprintToTestSpec))
 		{
 			UE_LOG(LogBlt, Error, TEXT("Entry %s must have an Object type value!"), *ActorClassName);
+			ensureMsgf(false, TEXT("Entry %s must have an Object type value!"), *ActorClassName);
 			continue;
 		}
 

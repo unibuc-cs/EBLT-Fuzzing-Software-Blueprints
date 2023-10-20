@@ -1,0 +1,67 @@
+{
+	"EBLTTest_Ex1.EBLTTest_Ex1_C": {
+
+		"inputs" : {
+		"CharacterScale": "[min=0.5, max=2.0]",
+		"StartLocation": "{(7424.000000,-49.000000,114.000000), (830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000) # (7522.000000,1235.000000,900.000000)}",    
+		"DestLocation_asEntity": "{BP_checkpoint2}",
+		"StartRotation" : "{(0,-90,0), (0,0,0)}",
+        "walkSpeed": "[min=200, max=575]",
+        "sprintSpeed":"{200 # 250 # 400}",
+		"jumpVelocity": "[min=1000, max=3000]"	
+		},
+
+		"expectedOutputs" : {
+			"timeToPathLimit" :
+			{
+				"type" : "continuous-60",
+				"value" : "[min=0.0, max=30]",
+				"failCode" : "1"
+			},
+
+			"movingIdleLimit" :
+			{
+				"type" : "continuous-10",
+				"value" : "[min=0.0, max=3]",
+				"failCode" : "2"
+			}
+		},
+
+		"metadata" : {
+			"numTestInstances" : "[min=10, max=10]"
+		}
+	},
+
+	"EBLTTuning_Ex1.EBLTTuning_Ex1_C": {
+
+			"inputs" : {
+			"CharacterScale": "[min=0.5, max=2.0]",
+			"StartLocation": "{(7424.000000,-49.000000,114.000000), (830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000) # (7522.000000,1235.000000,900.000000)}",    
+			"DestLocation_asEntity": "{BP_checkpoint2}",
+			"StartRotation" : "{(0,-90,0), (0,0,0)}",
+	        "walkSpeed": "[min=150, max=575]",
+	        "sprintSpeed":"{200 # 250 # 400}",
+			"jumpVelocity": "[min=1000, max=3000]"	
+			},
+
+			"expectedOutputs" : {
+				"timeToPathLimit" :
+				{
+					"type" : "continuous-60",
+					"value" : "[min=0.0, max=30]",
+					"failCode" : "1"
+				},
+
+				"movingIdleLimit" :
+				{
+					"type" : "continuous-10",
+					"value" : "[min=0.0, max=3]",
+					"failCode" : "2"
+				}
+			},
+
+			"metadata" : {
+				"numTestInstances" : "[min=10, max=10]"
+			}
+	}
+}

@@ -16,20 +16,21 @@
 #include "Serialization/JsonSerializer.h"
 
 #include "TestAnnotation.h"
-#include "Editor/EditorEngine.h"
+#include "AI/NavigationSystemBase.h"
+#include "NavigationSystem.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
 
 
 PRAGMA_DISABLE_OPTIMIZATION
 
 ACharacter* UEBltBPLibrary::m_lastTestCharacterSpawned = nullptr;
 
-///////////// DEMO DELETE
-
 
 // Needed to exit from the current opened map.
 static void ExitCurrentOpenedMap()
 {
-	if (UWorld* World = GetWorldForTests())
+	if (UWorld* World = UEBltBPLibrary::GetWorldForTests())
 	{
 		if (APlayerController* TargetPC = UGameplayStatics::GetPlayerController(World, 0))
 		{
@@ -119,38 +120,10 @@ bool Annotation_JsonTests::RunTest(FString const& Parameters)
 
 AEBLTManager*  UEBltBPLibrary::m_ebltManager = nullptr;
 
-
-
-
 UClass* UEBltBPLibrary::FindClass(const FString& ClassName, const bool& bExactClass, UObject* const Package)
 {
 	check(*ClassName);
 	UObject* const Outer = Package;// ? Package : ANY_PACKAGE;
-
-	/*
-	TArray<UClass*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(world, UClass::StaticClass(), FoundActors);
-
-	for (const UClass* act : FoundActors)
-	{
-		FString name = act->GetName();
-		if (name.Contains(TEXT("Ex1")) || name.Contains(TEXT("EBLT")) || name.Contains(TEXT("Tuning")) || name.Contains(TEXT("Test")))
-		{
-			int a = 3;
-			a++;
-		}
-	}
-	*/
-
-	/*
-	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass(TEXT("Class'/Game/Blueprints/MyCustomBP.MyCustomBP_C'"));
-	if (MyBPClass.Object != NULL)
-	{
-		YourBPClass = MyBPClass.Object;
-	}
-	*/
-
-
 
 	if (UClass* const ClassType = FindFirstObjectSafe<UClass>(*ClassName))
 		return ClassType;
@@ -395,6 +368,24 @@ AActor* UEBltBPLibrary::SpawnTestingCharacter(const UObject* const WorldContextO
 	FTransform actorTransform(rotation, location, UE::Math::TVector(characterScale, characterScale, characterScale));
 	actorTransform.SetScale3D(UE::Math::TVector(characterScale, characterScale, characterScale));
 
+	// Modify a bit the location of the character to be on the navmesh
+	FNavLocation preferedModLoc[3];
+	bool prefferedModLoc_isgood[3];
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(world);
+	prefferedModLoc_isgood[0] = NavSys->ProjectPointToNavigation(location, preferedModLoc[0], FVector(0.0, 0.0, 500.0f));
+	prefferedModLoc_isgood[1] = NavSys->GetRandomPointInNavigableRadius(location, 100.0f, preferedModLoc[1]);
+	prefferedModLoc_isgood[2] = NavSys->GetRandomReachablePointInRadius(location, 100.0f, preferedModLoc[2]);
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (!prefferedModLoc_isgood[i])
+			continue;
+
+		actorTransform.SetLocation(preferedModLoc[i]);
+		break;
+	}
+
+
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
@@ -411,6 +402,11 @@ AActor* UEBltBPLibrary::SpawnTestingCharacter(const UObject* const WorldContextO
 		aiController->ReceiveMoveCompleted.AddDynamic(m_ebltManager, &AEBLTManager::OnMoveCompletedEvent);
 	}
 
+	UCharacterMovementComponent* movementComponent = Cast<UCharacterMovementComponent>(actorSpawned->GetMovementComponent());
+	movementComponent->MaxWalkSpeed = sprintSpeed;
+	movementComponent->MaxFlySpeed = jumpVelocity;
+
+
 	m_lastTestCharacterSpawned = actorSpawned;
 	return actorSpawned;
 }
@@ -421,6 +417,26 @@ void UEBltBPLibrary::OnEBLTManagerDestroyed()
 	m_ebltManager = nullptr;
 }
 
+UWorld* UEBltBPLibrary::GetWorldForTests()
+{
+	if (GEngine)
+	{
+		if (const FWorldContext* WorldContext = GEngine->GetWorldContextFromPIEInstance(0))
+		{
+			return WorldContext->World();
+		}
+		if (GEngine->GetWorld())
+		{
+			return GEngine->GetWorld();
+		}
+		else
+		{
+			return AEBLTManager::getMyWorld();
+		}
+	}
+	return nullptr;
+}
+
+
 PRAGMA_ENABLE_OPTIMIZATION
 
-#pragma optimize("", on) 

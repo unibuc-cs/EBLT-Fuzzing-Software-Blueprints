@@ -2,15 +2,13 @@
 	"EBLTTest_Ex1.EBLTTest_Ex1_C": {
 
 		"inputs" : {
-		"CharacterScale": "[min=0.8, max=1.5]",
-		"StartLocation": "{(830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000)}",    
-		"StartLocation_": "{(-120.000000,-790.000000,68.000000) # (-850.000000,-1080.000000,368.000000)}",    
-		"StartLocation__": "[min=(-820.000000,-1230.000000,350), max=(830,-120,350)]",
+		"CharacterScale": "[min=0.5, max=2.0]",
+		"StartLocation": "{(7424.000000,-49.000000,114.000000), (830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000) # (7522.000000,1235.000000,900.000000)}",    
 		"DestLocation_asEntity": "{BP_checkpoint2}",
 		"StartRotation" : "{(0,-90,0), (0,0,0)}",
-        "walkSpeed": "[min=120, max=375]",
+        "walkSpeed": "[min=200, max=575]",
         "sprintSpeed":"{200 # 250 # 400}",
-		"jumpVelocity": "[min=0, max=3000]"	
+		"jumpVelocity": "[min=1000, max=3000]"	
 		},
 
 		"expectedOutputs" : {
@@ -37,15 +35,13 @@
 	"EBLTTuning_Ex1.EBLTTuning_Ex1_C": {
 
 			"inputs" : {
-			"CharacterScale": "[min=0.8, max=1.5]",
-			"StartLocation": "{(830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000)}",    
-			"StartLocation_": "{(-120.000000,-790.000000,68.000000) # (-850.000000,-1080.000000,368.000000)}",    
-			"StartLocation__": "[min=(-820.000000,-1230.000000,350), max=(830,-120,350)]",
+			"CharacterScale": "[min=0.5, max=2.0]",
+			"StartLocation": "{(7424.000000,-49.000000,114.000000), (830,-120,350) # (-1788.000000,-1693.000000,581.000000) # (405.000000,-4041.000000,199.000000) # (7522.000000,1235.000000,900.000000)}",    
 			"DestLocation_asEntity": "{BP_checkpoint2}",
 			"StartRotation" : "{(0,-90,0), (0,0,0)}",
-	        "walkSpeed": "[min=120, max=375]",
+	        "walkSpeed": "[min=150, max=575]",
 	        "sprintSpeed":"{200 # 250 # 400}",
-			"jumpVelocity": "[min=0, max=3000]"	
+			"jumpVelocity": "[min=1000, max=3000]"	
 			},
 
 			"expectedOutputs" : {

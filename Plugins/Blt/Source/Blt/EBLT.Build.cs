@@ -21,7 +21,8 @@ public class EBLT : ModuleRules
 			"Json",
 			"AIModule",
 			"CinematicCamera",
-            "Projects"
-		});
+            "Projects",
+            "NavigationSystem"
+        });
 	}
 }

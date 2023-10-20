@@ -99,7 +99,20 @@ public:
 	// Current test strategy type
 	TestParamsSuggestionStrategy m_state_testStrategy = TestParamsSuggestionStrategy::TESTPARAMSTRATEGY_RANDOM;
 
+	const FString& GetPluginContentDir() const { return m_EBLTContentDir; }
+
+	static AEBLTManager* getInstance();
+
+	static UWorld* getMyWorld();
+
 protected:
 	// REturns true if any left, false otherwise, like an iterator
 	bool internal_getNextTestToRun();
+
+	// The path to the content dir of the plugin
+	FString m_EBLTContentDir;
+
+	static AEBLTManager* m_instance;
+	static UWorld* m_myWorld;
+
 };

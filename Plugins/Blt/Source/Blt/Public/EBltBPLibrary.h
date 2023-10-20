@@ -12,20 +12,6 @@ class FJsonValue;
 class AEBLTManager;
 class ACharacter;
 
-// Gets the UWorld for tests
-static UWorld* GetWorldForTests()
-{
-	if (GEngine)
-	{
-		if (const FWorldContext* WorldContext = GEngine->GetWorldContextFromPIEInstance(0))
-		{
-			return WorldContext->World();
-		}
-	}
-	return nullptr;
-}
-
-
 
 UCLASS(Abstract)
 class UEBltBPLibrary : public UBlueprintFunctionLibrary
@@ -100,6 +86,7 @@ public:
 
 
 	static void OnEBLTManagerDestroyed();
+	static UWorld* GetWorldForTests();
 
 protected:
 

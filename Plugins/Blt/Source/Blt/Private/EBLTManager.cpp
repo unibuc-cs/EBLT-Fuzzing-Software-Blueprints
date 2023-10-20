@@ -6,8 +6,13 @@
 #include "Misc/OutputDeviceNull.h"
 #include "EBltBPLibrary.h"
 #include "EBLTTestTemplate.h"
+#include "Interfaces/IPluginManager.h"
+#include "GameFramework/Character.h"
 
 PRAGMA_DISABLE_OPTIMIZATION
+
+AEBLTManager* AEBLTManager::m_instance = nullptr;
+UWorld* AEBLTManager::m_myWorld = nullptr;
 
 // Sets default values
 AEBLTManager::AEBLTManager()
@@ -15,45 +20,52 @@ AEBLTManager::AEBLTManager()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	/*
-	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass(TEXT("Class'/Game/Navigation/NPC_EBLT_TestCharacter.NPC_EBLT_TestCharacter_C'"));
-	if (MyBPClass.Object != NULL)
-	{
-		int a = 3;
-		a++;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass2(TEXT("Class'/EBLT/EBLTTuning_Ex1.EBLTTuning_Ex1_C'"));
-	if (MyBPClass2.Object != NULL)
-	{
-		int a = 3;
-		a++;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UClass> MyBPClass3(TEXT("Class'/EBLT/EBLTManager_BP.EBLTManager_BP_C'"));
-	if (MyBPClass3.Object != NULL)
-	{
-		int a = 3;
-		a++;
-	}
-	*/
+	m_EBLTContentDir = IPluginManager::Get().FindPlugin(TEXT("EBLT"))->GetContentDir();
 }
+
+AEBLTManager* AEBLTManager::getInstance()
+{
+	if (m_instance == nullptr)
+	{
+		ensureMsgf(m_instance, TEXT("In this version we require the manager to be added to a level"));
+		//m_instance = new AEBLTManager();
+	}
+	return m_instance;
+}
+
+UWorld* AEBLTManager::getMyWorld()
+{
+	return m_instance->GetWorld();
+}
+
  
 // Called when the game starts or when spawned
 void AEBLTManager::BeginPlay()
 {
-	Super::BeginPlay();
+  	Super::BeginPlay();
 
-	InitTestsSuite();
+
+	ensureMsgf(m_instance == nullptr, TEXT("THis object already exists"));
+	m_instance = this;
+	m_myWorld = GetWorld();
+
+	//InitTestsSuite();
 }
 
 void AEBLTManager::Destroyed()
 {
+	//ensureMsgf(m_instance, TEXT("THis object was not registered"));
+	m_instance = nullptr;
+
 	UEBltBPLibrary::OnEBLTManagerDestroyed();
 }
 
 void AEBLTManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	ensureMsgf(m_instance, TEXT("THis object was not registered"));
+	m_instance = nullptr;
+	m_myWorld = nullptr;
+
 	UEBltBPLibrary::OnEBLTManagerDestroyed();
 }
  
@@ -80,6 +92,11 @@ void AEBLTManager::OnMoveCompletedEvent_Implementation(FAIRequestID RequestID, E
 
 void AEBLTManager::RunTestSuite()
 {
+	if (m_testNamesToAnnotations.Num() <= 0)
+	{
+		return; 
+	}
+
 	UE_LOG(LogBlt, Warning, TEXT("=========== RUNNING A NEW TEST SUITE ==========="));
 
 	ensureMsgf(m_currentlyRunningTests.IsEmpty(), TEXT("You are currently trying to run a new test suite but existing one is in progres !!!!"));
@@ -170,7 +187,6 @@ void AEBLTManager::GetTestsToRun(TArray<FString>& outTestsToRun, TestParamsSugge
 	for (const auto& it : m_testNamesToAnnotations)
 	{
 		outTestsToRun.Add(it.Key);
-		outTestsToRun.Add(it.Key);
 	}
 
 	// 4: get a strategy and simulator instance to use too !
@@ -184,18 +200,22 @@ void AEBLTManager::OnTestFinished(AEBLTTestTemplate* testWhoFinished, const EBLT
 
 	const bool isTesting = testWhoFinished->m_EBLTType == EBLTType::EBLT_FuzzForTesting;
 
+
 	if (GEngine)
 	{
-		FColor colorForDebugText = (finishedStatus == EBLTTestStatus::EBLTTest_Success ? FColor::Green : FColor::Red);
-		if (!isTesting)
+		FColor colorForDebugText = FColor::Black;
+		if (isTesting)
 		{
-			if (colorForDebugText == FColor::Green)
-				colorForDebugText = FColor::Red;
-			else
-				colorForDebugText = FColor::Green;
+			colorForDebugText = (finishedStatus == EBLTTestStatus::EBLTTest_Success ? FColor::Green : FColor::Red);
+		}
+		else
+		{
+			colorForDebugText = (finishedStatus == EBLTTestStatus::EBLTTest_Success ? FColor::Blue : FColor::Yellow);
 		}
 
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1000, colorForDebugText, FString::Printf(TEXT(" ## Test %s, instance %d,  was finished - %s.%s"),
+
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1000, colorForDebugText, FString::Printf(TEXT(" ## %s %s, instance %d,  was finished - %s.%s"),
+			(isTesting ? TEXT("TEST - ") : TEXT("TUNE - ")),
 			*testWhoFinished->GetGivenName(),
 			m_nextTestToRun_TestIndex_And_InstanceIndex.Value,
 			EBLTCommonUtils::EnumToString(finishedStatus), 
@@ -226,7 +246,10 @@ void AEBLTManager::OnTestFinished(AEBLTTestTemplate* testWhoFinished, const EBLT
 	testWhoFinished->Destroy();
 #endif
 
-	UEBltBPLibrary::m_lastTestCharacterSpawned->K2_DestroyActor();
+	if (UEBltBPLibrary::m_lastTestCharacterSpawned != nullptr && !UEBltBPLibrary::m_lastTestCharacterSpawned->IsPendingKillPending())
+	{
+		UEBltBPLibrary::m_lastTestCharacterSpawned->K2_DestroyActor();
+	}
 	UEBltBPLibrary::m_lastTestCharacterSpawned = nullptr;
 
 	// If currently running tests is emtpy move back to idle
@@ -236,9 +259,12 @@ void AEBLTManager::OnTestFinished(AEBLTTestTemplate* testWhoFinished, const EBLT
 
 		if (!hasNextTest)
 		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1000, FColor::Emerald, FString::Printf(TEXT("============= FINISHED ALL TESTS =========== ")), true);
+
 			if (m_continuousTestRunning)
 			{
 				m_state = EBLTManagerState::EBLT_Idle;
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1000, FColor::Emerald, FString::Printf(TEXT("##### RESTARTING AS SPECIFIED in the options ##### ")), true);
 			}
 		}
 	}

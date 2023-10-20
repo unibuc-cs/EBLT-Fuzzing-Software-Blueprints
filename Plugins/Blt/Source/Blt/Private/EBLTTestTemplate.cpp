@@ -81,7 +81,7 @@ void AEBLTTestTemplate::Tick(float DeltaTime)
 
 			FTimerHandle UnusedHandle;
 			GetWorldTimerManager().SetTimer(
-				UnusedHandle, this, &AEBLTTestTemplate::OnTestFilureRecoveryElapsed, 10.0f, false);
+				UnusedHandle, this, &AEBLTTestTemplate::OnTestFilureRecoveryElapsed, 3.0f, false);
 
 			APlayerController* const MyPlayer = Cast<APlayerController>(GEngine->GetFirstLocalPlayerController((GetWorld())));
 			if (MyPlayer != nullptr)
@@ -232,7 +232,7 @@ void AEBLTTestTemplate::OutputTestFailedCase()
 {
 	std::stringstream ss;
 
-	FString ContentFolderPath = IPluginManager::Get().FindPlugin(TEXT("EBLT"))->GetContentDir();
+	FString ContentFolderPath = m_ebltManager->GetPluginContentDir();
 	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 	const FString RelativePath = ContentFolderPath / TEXT("Outputs/FailedTests") / GetGivenName() + TEXT(".csv");
@@ -271,7 +271,7 @@ void AEBLTTestTemplate::OutputTestSuccedTuningCase()
 {
 	std::stringstream ss;
 
-	FString ContentFolderPath = IPluginManager::Get().FindPlugin(TEXT("EBLT"))->GetContentDir();
+	FString ContentFolderPath = m_ebltManager->GetPluginContentDir();
 	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 	const FString RelativePath = ContentFolderPath / TEXT("Outputs/Tuning") / GetGivenName() + TEXT(".csv");
