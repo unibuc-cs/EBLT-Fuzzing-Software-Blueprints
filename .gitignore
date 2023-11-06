@@ -45,3 +45,5 @@ SourceArt/**/*.tga
 *_BuiltData.uasset
 Documentation/Demo_2_user_request_fuzzing.mp4
 Documentation/Demo_automatic_fuzzing.mp4
+Release/
+ReleaseVersion (1).zip
