@@ -3,21 +3,20 @@
 [![MIT License](https://img.shields.io/github/license/bUsernameIsUnavailable/BLT?style=for-the-badge)](https://github.com/bUsernameIsUnavailable/BLT/blob/master/LICENSE.md)
 
 
-Developed with Unreal Engine 5.1.1, but should be compatible with newer versions like Unreal Engine 5.3. The assets used for defining the level are based on the HoursOfCode learning tutorial from Epic marketplace, publicly available for learning purposes. To satisfy our evaluation objectives, we highly modified the level, and some rules and placed new objects in different positions.
+Developed with Unreal Engine 5.1.1, but should be compatible with newer versions like Unreal Engine 5.3. The assets used for defining the level are based on the [Hour of Code](https://www.unrealengine.com/marketplace/en-US/product/unreal-engine-hour-of-code) learning tutorial from Epic marketplace, publicly available for learning purposes. To satisfy our evaluation objectives, we highly modified the level, and some rules and placed new objects in different positions.
 
 The video demonstration is available here:
 
 [![Video demo](https://img.youtube.com/vi/O9kz6DQse80/maxresdefault.jpg)](https://www.youtube.com/watch?v=O9kz6DQse80)
 
-
-Make sure to check the documentation folder https://github.com/AGAPIA/EBLT/tree/master/Documentation for the full technical paper (that best paper award at ICSOFT 2023 https://icsoft.scitevents.org/PreviousAwards.aspx),  presentation slides, and Video demo with explanations.
+Make sure to check the [documentation folder](https://github.com/AGAPIA/EBLT/tree/master/Documentation) for the full technical paper (distinguished with the best paper award at [ICSOFT 2023](https://icsoft.scitevents.org/PreviousAwards.aspx),  presentation slides, and Video demo with explanations.
 
 ## Quick Evaluation
 
-To try a release version to see the overall production capabilities of our framework, download from the following link https://drive.google.com/file/d/19W-9tCOzcUm1-E2kU0sTdBUHnyyniQoi/view?usp=sharing, unzip then run the executable in the folder.
+To try a release version to see the overall production capabilities of our framework, download from the following [link](https://drive.google.com/file/d/19W-9tCOzcUm1-E2kU0sTdBUHnyyniQoi/view?usp=sharing), unzip then run the executable in the folder.
 
-The tests that run by default are in the annotation file https://github.com/AGAPIA/EBLT/blob/master/Plugins/Blt/Content/images/AnnotationsExample2.json. 
-If you open the file you note that there are two cases in there, a TEST and a TUNE case.  A snapshot for TEST from the file mentioned above is given in the picture below. ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/AnnotationsFile2.png?raw=true).
+The tests that run by default are described in the [annotation file](https://github.com/AGAPIA/EBLT/blob/master/Content/Tests/AnnotationsExample2.json) in the Content/Tests folder from the root of the project. 
+If you open the file you note that there are two cases in there, a TEST and a TUNE case.  A snapshot for TEST from the file mentioned above is given in the picture below. ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/AnnotationsFile2.png?raw=true)
 The concrete use-case of this definition is a general-purpose pathfinding system, trying to start from different positions and getting to a marked location in the level.
 
 Each has different ranges and sets to control the following variables:
@@ -50,12 +49,16 @@ While running the tests you will see a bunch of output logs on the screen for ea
 
 
 ### Trying the demo level and plugin in the editor
-1. Install the Engine from here https://www.unrealengine.com/en-US/unreal-engine-5 
+1. Install the Engine from [here](https://www.unrealengine.com/en-US/unreal-engine-5) 
 2. Clone or download the repository
-3. Then, you can click the Launch Game option to test it, or generate a solution and contribute to the project!
-  ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_1.png?raw=true)
-  Note: You can use Visual Studio 2022 Community Edition or Rider from https://www.jetbrains.com/lp/rider-unreal/  to extend the project or view the source code.
+3. Then, you can click the Launch Game option to test it, or generate a solution and contribute to the project! 
+   
+    ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_1.png?raw=true)
+
+    Note: You can use Visual Studio 2022 Community Edition or [Rider](https://www.jetbrains.com/lp/rider-unreal/)  to extend the project or view the source code.
+
 4. Once the editor is opened, click the green button like in the image below and the tests will start.
+   
    ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_run.png?raw=true)
    
 
@@ -77,7 +80,7 @@ First, drag the EBLTManager component to the world, doesn't matter the position 
 
 #### To define and register a new test/tune task:
 
-The tests are defined with the BDD methodology in mind. https://en.wikipedia.org/wiki/Behavior-driven_development 
+The tests are defined with the [BDD methodology in mind](https://en.wikipedia.org/wiki/Behavior-driven_development).
 1. Derive a blueprint from EBLTTestTemplate (see full paper for details about this custom plugin class)
 
 2. Set the type of the purpose case, i.e., TEST or TUNE, then make an annotation file similar to the one in Annotations2.json with a correspondence to a variable in the blueprint definition of the test as shown in the picture below. This is basically the test running in the demo and annotation given as an example.
@@ -92,6 +95,10 @@ The tests are defined with the BDD methodology in mind. https://en.wikipedia.org
 ![alt text](https://github.com/AGAPIA/EBLT/blob/master/Documentation/images/setup_tests_to_manager.png?raw=true)
 
 5. To restart the testing and/or tuning specified tasks and run continuously forever (or until there is a technical problem..), just enable the variable M Continuous Test Running shown in the figure above, below the Allowed Test  Instances array.
+
+### Troubleshooting
+
+If you are using an UnrealEngine version different to 5.1.1, you may encounter a `Missing UnrealEngineHourOfCode Modules` error. You should opt for not rebuilding the modules by selecting `No`. Some of the lighting fidelity of the models may be sacrificed, but with no impact to the demo of this plugin. 
 
 ## Remember to give us feedback and can't wait for your contributions.
 
